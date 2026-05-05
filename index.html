@@ -341,7 +341,13 @@
       <button class="nav-tab" onclick="goto('session')">Sesión</button>
       <button class="nav-tab" onclick="goto('config')">Config</button>
     </div>
-    <div class="nav-status" id="nav-status">—</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div id="autosave-status" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-family:var(--mono);">
+        <div id="autosave-dot" style="width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;"></div>
+        <span id="autosave-label">—</span>
+      </div>
+      <div class="nav-status" id="nav-status">—</div>
+    </div>
   </nav>
   <main>
 
@@ -486,6 +492,14 @@
             <button class="btn btn-primary" onclick="saveGistConfig()">Guardar config</button>
             <button class="btn btn-secondary" onclick="syncGist('pull')">⬇ Descargar de Gist</button>
             <button class="btn btn-secondary" onclick="syncGist('push')">⬆ Subir a Gist</button>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);">Autoguardado cada 5 min</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px;">Sube la BD a Gist automáticamente. Requiere token configurado.</div>
+            </div>
+            <button id="autosave-toggle-btn" class="btn btn-ghost btn-sm" onclick="toggleAutosave()" style="white-space:nowrap;">— — —</button>
           </div>
           <div class="mt-12 text-xs text-dim">
             Token se guarda solo en localStorage de tu navegador. Nunca viaja a ningún servidor externo.
@@ -1810,9 +1824,161 @@ document.addEventListener('change', e => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// AUTOSAVE ENGINE
+// ═══════════════════════════════════════════════════════════════
+const AUTOSAVE_KEY = 'neuraldeck_autosave';
+const AUTOSAVE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+let autosaveTimer = null;
+let lastSavedHash = null; // Track if DB changed since last save
+
+function getDBHash() {
+  // Lightweight change detection — stringify length + session count
+  const db = getDB();
+  return `${db.conceptos.length}:${db.meta.ultima_actualizacion}:${JSON.stringify(db).length}`;
+}
+
+function isAutosaveEnabled() {
+  return localStorage.getItem(AUTOSAVE_KEY) === '1';
+}
+
+function setAutosaveEnabled(val) {
+  localStorage.setItem(AUTOSAVE_KEY, val ? '1' : '0');
+}
+
+function setAutosaveStatus(state, detail) {
+  const dot = document.getElementById('autosave-dot');
+  const label = document.getElementById('autosave-label');
+  if (!dot || !label) return;
+
+  const states = {
+    off:     { color: 'var(--text3)', anim: 'none',  text: 'autosave off' },
+    idle:    { color: 'var(--green)', anim: 'none',  text: 'guardado' },
+    pending: { color: 'var(--yellow)', anim: 'pulse 1.5s infinite', text: 'guardando...' },
+    error:   { color: 'var(--red)',   anim: 'none',  text: 'error al guardar' },
+    waiting: { color: 'var(--accent2)', anim: 'none', text: 'autoguardado activo' },
+  };
+  const s = states[state] || states.off;
+  dot.style.background = s.color;
+  dot.style.animation = s.anim;
+  dot.style.boxShadow = state === 'idle' ? '0 0 5px var(--green)' : (state === 'waiting' ? '0 0 5px var(--accent)' : 'none');
+  label.textContent = detail || s.text;
+}
+
+function updateAutosaveToggleBtn() {
+  const btn = document.getElementById('autosave-toggle-btn');
+  if (!btn) return;
+  const enabled = isAutosaveEnabled();
+  btn.textContent = enabled ? '⏸ Desactivar' : '▶ Activar';
+  btn.className = enabled ? 'btn btn-danger btn-sm' : 'btn btn-green btn-sm';
+}
+
+async function runAutosave(silent = false) {
+  const cfg = getGistConfig();
+  if (!cfg.token) {
+    if (!silent) toast('⚠ Configura el token de GitHub para usar autoguardado');
+    setAutosaveStatus('error', 'sin token');
+    return;
+  }
+
+  // Skip if nothing changed since last save
+  const currentHash = getDBHash();
+  if (currentHash === lastSavedHash) {
+    setAutosaveStatus('waiting', 'sin cambios');
+    return;
+  }
+
+  setAutosaveStatus('pending');
+  try {
+    const db = getDB();
+    const content = JSON.stringify(db, null, 2);
+    let res;
+
+    if (cfg.gistId) {
+      res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: { 'neuraldeck_db.json': { content } } })
+      });
+    } else {
+      // Create new gist and save the ID
+      res = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: 'NeuralDeck BD', public: false, files: { 'neuraldeck_db.json': { content } } })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        cfg.gistId = data.id;
+        localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(cfg));
+        const gistInput = document.getElementById('gist-id');
+        if (gistInput) gistInput.value = cfg.gistId;
+      }
+    }
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    lastSavedHash = currentHash;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    setAutosaveStatus('idle', `guardado ${timeStr}`);
+    if (!silent) toast(`☁ Autoguardado en Gist — ${timeStr}`);
+
+    // Update gist dot in config if visible
+    updateGistStatus('configured');
+
+  } catch (e) {
+    setAutosaveStatus('error', 'falló');
+    if (!silent) toast('⚠ Autoguardado falló: ' + e.message);
+  }
+}
+
+function startAutosave() {
+  stopAutosave();
+  setAutosaveEnabled(true);
+  updateAutosaveToggleBtn();
+  setAutosaveStatus('waiting', 'autoguardado activo');
+
+  // Run once immediately (silent), then every 5 min
+  runAutosave(true);
+  autosaveTimer = setInterval(() => runAutosave(false), AUTOSAVE_INTERVAL_MS);
+}
+
+function stopAutosave() {
+  if (autosaveTimer) { clearInterval(autosaveTimer); autosaveTimer = null; }
+  setAutosaveEnabled(false);
+  updateAutosaveToggleBtn();
+  setAutosaveStatus('off');
+}
+
+function toggleAutosave() {
+  if (isAutosaveEnabled()) {
+    stopAutosave();
+    toast('Autoguardado desactivado');
+  } else {
+    const cfg = getGistConfig();
+    if (!cfg.token) {
+      toast('⚠ Primero guarda el token de GitHub en Config → Gist');
+      goto('config');
+      return;
+    }
+    startAutosave();
+    toast('☁ Autoguardado activado — cada 5 minutos');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
 renderDashboard();
+updateAutosaveToggleBtn();
+
+// Restore autosave if it was active before page reload
+if (isAutosaveEnabled()) {
+  startAutosave();
+} else {
+  setAutosaveStatus('off');
+}
 </script>
 </body>
 </html>
