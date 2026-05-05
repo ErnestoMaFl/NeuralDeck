@@ -341,12 +341,17 @@
       <button class="nav-tab" onclick="goto('session')">Sesión</button>
       <button class="nav-tab" onclick="goto('config')">Config</button>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div id="autosave-status" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-family:var(--mono);">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <!-- AUTOSAVE indicator -->
+      <div id="autosave-status" style="display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);">
         <div id="autosave-dot" style="width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;"></div>
-        <span id="autosave-label">—</span>
+        <span id="autosave-label" style="font-size:10px;color:var(--text3);font-family:var(--mono);white-space:nowrap;">—</span>
       </div>
-      <div class="nav-status" id="nav-status">—</div>
+      <!-- PENDING count -->
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="font-size:10px;color:var(--text3);font-family:var(--mono);letter-spacing:0.04em;">HOY</span>
+        <span class="badge badge-accent" id="nav-pending-badge" style="font-size:11px;min-width:20px;">0</span>
+      </div>
     </div>
   </nav>
   <main>
@@ -952,8 +957,9 @@ function renderDashboard() {
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-sessions').textContent = db.meta.total_sesiones || 0;
   document.getElementById('due-count-badge').textContent = due.length;
+  const pendingBadge = document.getElementById('nav-pending-badge');
+  if (pendingBadge) pendingBadge.textContent = due.length;
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('es-MX', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('nav-status').textContent = due.length + ' pendientes';
 
   // Due list
   const dueList = document.getElementById('due-list');
@@ -1003,7 +1009,7 @@ function conceptItem(c, mini=false) {
       <div class="concept-name">${c.nombre}</div>
       <div class="concept-meta">
         <span class="concept-domain">${c.dominio}</span>
-        ${c.tags.slice(0,3).map(t=>`<span class="tag tag-purple">${t}</span>`).join('')}
+        ${c.tags.map(t=>`<span class="tag tag-purple">${t}</span>`).join('')}
         <span class="state-pill state-${c.estado_teoria}">T:${c.estado_teoria}</span>
         <span class="state-pill state-${c.estado_practica}">P:${c.estado_practica}</span>
       </div>
@@ -1503,22 +1509,31 @@ function importJSON(e) {
       const db = JSON.parse(ev.target.result);
       if (!db.conceptos) throw new Error('Formato inválido — falta campo "conceptos"');
 
-      let fixedIds = 0, fixedFsrs = 0;
-      // Auto-assign IDs to concepts that are missing them or have placeholder values
-      const usedIds = new Set(db.conceptos.filter(c => c.id && c.id !== 'AUTOGENERADO_POR_APP').map(c => String(c.id)));
+      let fixedIds = 0;
+      const usedIds = new Set(
+        db.conceptos
+          .filter(c => c.id && c.id !== 'AUTOGENERADO_POR_APP' && String(c.id).trim() !== '')
+          .map(c => String(c.id).trim())
+      );
+
       db.conceptos = db.conceptos.map(c => {
-        // Fix missing or placeholder ID
-        if (!c.id || c.id === 'AUTOGENERADO_POR_APP' || String(c.id).trim() === '') {
-          let newId = String(Date.now() + Math.floor(Math.random()*9999));
-          while (usedIds.has(newId)) newId = String(Date.now() + Math.floor(Math.random()*9999));
+        const rawId = c.id !== undefined && c.id !== null ? String(c.id).trim() : '';
+        const needsId = !rawId || rawId === 'AUTOGENERADO_POR_APP';
+
+        if (needsId) {
+          // Generate a unique numeric ID
+          let newId;
+          do { newId = String(Date.now()) + String(Math.floor(Math.random() * 9999)).padStart(4,'0'); }
+          while (usedIds.has(newId));
           usedIds.add(newId);
           c.id = newId;
           fixedIds++;
+        } else {
+          c.id = rawId; // normalize (trim whitespace)
         }
-        // Sanitize FSRS block — fill in any missing fields
-        if (!c.fsrs || typeof c.fsrs !== 'object') {
-          c.fsrs = {}; fixedFsrs++;
-        }
+
+        // Sanitize FSRS block
+        if (!c.fsrs || typeof c.fsrs !== 'object') c.fsrs = {};
         c.fsrs = {
           stability: typeof c.fsrs.stability === 'number' ? c.fsrs.stability : 0,
           difficulty: typeof c.fsrs.difficulty === 'number' ? c.fsrs.difficulty : 5,
@@ -1528,15 +1543,18 @@ function importJSON(e) {
           lapses: typeof c.fsrs.lapses === 'number' ? c.fsrs.lapses : 0,
           state: c.fsrs.state || 'new'
         };
-        // Ensure required arrays exist
+        // Ensure required arrays/fields
         if (!Array.isArray(c.tags)) c.tags = [];
         if (!Array.isArray(c.requiere)) c.requiere = [];
         if (!Array.isArray(c.mejoras_acumuladas)) c.mejoras_acumuladas = [];
         if (!Array.isArray(c.ultimos_ejercicios)) c.ultimos_ejercicios = [];
         if (!Array.isArray(c.errores_previos)) c.errores_previos = [];
+        if (!c.definicion_actual) c.definicion_actual = '';
         if (!Array.isArray(c.historial_definiciones)) {
-          c.historial_definiciones = [{ fecha: today(), texto: c.definicion_actual || '' }];
+          c.historial_definiciones = [{ fecha: today(), texto: c.definicion_actual }];
         }
+        if (!c.estado_teoria) c.estado_teoria = 'nuevo';
+        if (!c.estado_practica) c.estado_practica = 'nuevo';
         return c;
       });
 
@@ -1827,23 +1845,32 @@ document.addEventListener('change', e => {
 // AUTOSAVE ENGINE
 // ═══════════════════════════════════════════════════════════════
 const AUTOSAVE_KEY = 'neuraldeck_autosave';
+const AUTOSAVE_LASTTIME_KEY = 'neuraldeck_autosave_lasttime';
 const AUTOSAVE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 let autosaveTimer = null;
-let lastSavedHash = null; // Track if DB changed since last save
+let lastSavedHash = null;
 
 function getDBHash() {
-  // Lightweight change detection — stringify length + session count
   const db = getDB();
   return `${db.conceptos.length}:${db.meta.ultima_actualizacion}:${JSON.stringify(db).length}`;
 }
 
 function isAutosaveEnabled() {
-  return localStorage.getItem(AUTOSAVE_KEY) === '1';
+  const val = localStorage.getItem(AUTOSAVE_KEY);
+  return val === null ? true : val === '1'; // DEFAULT ON
 }
 
 function setAutosaveEnabled(val) {
   localStorage.setItem(AUTOSAVE_KEY, val ? '1' : '0');
+}
+
+function getLastSavedTime() {
+  return localStorage.getItem(AUTOSAVE_LASTTIME_KEY) || null;
+}
+
+function setLastSavedTime(timeStr) {
+  localStorage.setItem(AUTOSAVE_LASTTIME_KEY, timeStr);
 }
 
 function setAutosaveStatus(state, detail) {
@@ -1851,18 +1878,21 @@ function setAutosaveStatus(state, detail) {
   const label = document.getElementById('autosave-label');
   if (!dot || !label) return;
 
+  const lastTime = getLastSavedTime();
+  const lastSuffix = lastTime ? ` · ${lastTime}` : '';
+
   const states = {
-    off:     { color: 'var(--text3)', anim: 'none',  text: 'autosave off' },
-    idle:    { color: 'var(--green)', anim: 'none',  text: 'guardado' },
-    pending: { color: 'var(--yellow)', anim: 'pulse 1.5s infinite', text: 'guardando...' },
-    error:   { color: 'var(--red)',   anim: 'none',  text: 'error al guardar' },
-    waiting: { color: 'var(--accent2)', anim: 'none', text: 'autoguardado activo' },
+    off:     { color: 'var(--text3)', shadow: 'none', anim: 'none',  text: `off${lastSuffix}` },
+    idle:    { color: 'var(--green)', shadow: '0 0 5px var(--green)', anim: 'none', text: detail || `guardado${lastSuffix}` },
+    pending: { color: 'var(--yellow)', shadow: 'none', anim: 'pulse 1.5s infinite', text: 'guardando...' },
+    error:   { color: 'var(--red)',   shadow: 'none', anim: 'none',  text: `error${lastSuffix}` },
+    waiting: { color: 'var(--accent2)', shadow: '0 0 5px var(--accent)', anim: 'none', text: `activo${lastSuffix}` },
   };
   const s = states[state] || states.off;
   dot.style.background = s.color;
+  dot.style.boxShadow = s.shadow;
   dot.style.animation = s.anim;
-  dot.style.boxShadow = state === 'idle' ? '0 0 5px var(--green)' : (state === 'waiting' ? '0 0 5px var(--accent)' : 'none');
-  label.textContent = detail || s.text;
+  label.textContent = detail !== undefined ? detail : s.text;
 }
 
 function updateAutosaveToggleBtn() {
@@ -1876,15 +1906,15 @@ function updateAutosaveToggleBtn() {
 async function runAutosave(silent = false) {
   const cfg = getGistConfig();
   if (!cfg.token) {
+    setAutosaveStatus('error', 'sin token' + (getLastSavedTime() ? ` · ${getLastSavedTime()}` : ''));
     if (!silent) toast('⚠ Configura el token de GitHub para usar autoguardado');
-    setAutosaveStatus('error', 'sin token');
     return;
   }
 
-  // Skip if nothing changed since last save
   const currentHash = getDBHash();
   if (currentHash === lastSavedHash) {
-    setAutosaveStatus('waiting', 'sin cambios');
+    const lastTime = getLastSavedTime();
+    setAutosaveStatus('waiting', `activo · sin cambios${lastTime ? ' · ' + lastTime : ''}`);
     return;
   }
 
@@ -1901,7 +1931,6 @@ async function runAutosave(silent = false) {
         body: JSON.stringify({ files: { 'neuraldeck_db.json': { content } } })
       });
     } else {
-      // Create new gist and save the ID
       res = await fetch('https://api.github.com/gists', {
         method: 'POST',
         headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
@@ -1921,34 +1950,36 @@ async function runAutosave(silent = false) {
     lastSavedHash = currentHash;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    setLastSavedTime(timeStr); // persist even if autosave later turns off
     setAutosaveStatus('idle', `guardado ${timeStr}`);
-    if (!silent) toast(`☁ Autoguardado en Gist — ${timeStr}`);
-
-    // Update gist dot in config if visible
+    if (!silent) toast(`☁ Autoguardado — ${timeStr}`);
     updateGistStatus('configured');
 
   } catch (e) {
-    setAutosaveStatus('error', 'falló');
+    const lastTime = getLastSavedTime();
+    setAutosaveStatus('error', `error${lastTime ? ' · ' + lastTime : ''}`);
     if (!silent) toast('⚠ Autoguardado falló: ' + e.message);
   }
 }
 
 function startAutosave() {
-  stopAutosave();
+  stopAutosave(true); // stop timer only, don't flip the flag yet
   setAutosaveEnabled(true);
   updateAutosaveToggleBtn();
-  setAutosaveStatus('waiting', 'autoguardado activo');
-
-  // Run once immediately (silent), then every 5 min
+  const lastTime = getLastSavedTime();
+  setAutosaveStatus('waiting', `activo${lastTime ? ' · ' + lastTime : ''}`);
   runAutosave(true);
   autosaveTimer = setInterval(() => runAutosave(false), AUTOSAVE_INTERVAL_MS);
 }
 
-function stopAutosave() {
+function stopAutosave(timerOnly = false) {
   if (autosaveTimer) { clearInterval(autosaveTimer); autosaveTimer = null; }
-  setAutosaveEnabled(false);
-  updateAutosaveToggleBtn();
-  setAutosaveStatus('off');
+  if (!timerOnly) {
+    setAutosaveEnabled(false);
+    updateAutosaveToggleBtn();
+    const lastTime = getLastSavedTime();
+    setAutosaveStatus('off', `off${lastTime ? ' · ' + lastTime : ''}`);
+  }
 }
 
 function toggleAutosave() {
@@ -1973,11 +2004,12 @@ function toggleAutosave() {
 renderDashboard();
 updateAutosaveToggleBtn();
 
-// Restore autosave if it was active before page reload
+// Always start autosave by default; only skip if user explicitly turned it off
 if (isAutosaveEnabled()) {
   startAutosave();
 } else {
-  setAutosaveStatus('off');
+  const lastTime = getLastSavedTime();
+  setAutosaveStatus('off', `off${lastTime ? ' · ' + lastTime : ''}`);
 }
 </script>
 </body>
