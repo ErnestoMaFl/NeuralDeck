@@ -285,6 +285,35 @@
   .text-dim { color: var(--text3); }
   .fw-600 { font-weight: 600; }
 
+  /* AUTOCOMPLETE */
+  .ac-wrap { position: relative; }
+  .ac-dropdown {
+    display: none; position: absolute; top: calc(100% + 3px); left: 0; right: 0; z-index: 300;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    max-height: 180px; overflow-y: auto;
+  }
+  .ac-dropdown.open { display: block; }
+  .ac-item {
+    padding: 8px 12px; font-size: 13px; cursor: pointer; color: var(--text2);
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.1s;
+  }
+  .ac-item:hover, .ac-item.selected { background: var(--accent-dim); color: var(--text); }
+  .ac-item-tag { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: auto; }
+
+  /* TAG CHIPS in add modal */
+  .tag-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; min-height: 0; }
+  .tag-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
+    background: var(--accent-dim); color: var(--accent2); border: 1px solid rgba(124,106,247,0.25);
+    font-family: var(--mono);
+  }
+  .tag-chip-remove { cursor: pointer; opacity: 0.6; font-size: 13px; line-height: 1; }
+  .tag-chip-remove:hover { opacity: 1; }
+
   /* FSRS RATING BUTTONS */
   .rating-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .rating-btn {
@@ -516,13 +545,40 @@
     </div>
     <div>
       <div class="input-row">
-        <div class="input-group"><label class="input-label">Nombre *</label><input class="input" id="add-nombre" placeholder="Inyección de Dependencias"></div>
-        <div class="input-group"><label class="input-label">Dominio *</label><input class="input" id="add-dominio" placeholder="programación"></div>
+        <div class="input-group"><label class="input-label">Nombre *</label><input class="input" id="add-nombre" placeholder="Inyección de Dependencias" autocomplete="off"></div>
+        <div class="input-group">
+          <label class="input-label">Dominio *</label>
+          <div class="ac-wrap">
+            <input class="input" id="add-dominio" placeholder="programación" autocomplete="off"
+              oninput="acDominio(this)" onblur="acBlur('ac-dominio')" onfocus="acDominio(this)">
+            <div class="ac-dropdown" id="ac-dominio"></div>
+          </div>
+        </div>
       </div>
       <div class="input-group"><label class="input-label">Definición actual *</label><textarea class="input textarea" id="add-definicion" rows="3"></textarea></div>
       <div class="input-row">
-        <div class="input-group"><label class="input-label">Tags (separados por coma)</label><input class="input" id="add-tags" placeholder="solid, arquitectura"></div>
-        <div class="input-group"><label class="input-label">Requiere (IDs separados por coma)</label><input class="input" id="add-requiere" placeholder="001, 002"></div>
+        <div class="input-group">
+          <label class="input-label">Tags</label>
+          <div class="ac-wrap">
+            <input class="input" id="add-tags-input" placeholder="Escribe y presiona Enter o coma" autocomplete="off"
+              oninput="acTag(this)" onblur="acBlur('ac-tags')" onfocus="acTag(this)"
+              onkeydown="tagKeydown(event)">
+            <div class="ac-dropdown" id="ac-tags"></div>
+          </div>
+          <div class="tag-chips" id="tags-chips"></div>
+          <input type="hidden" id="add-tags">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Requiere (IDs)</label>
+          <div class="ac-wrap">
+            <input class="input" id="add-requiere-input" placeholder="Escribe nombre o ID y Enter" autocomplete="off"
+              oninput="acRequiere(this)" onblur="acBlur('ac-requiere')" onfocus="acRequiere(this)"
+              onkeydown="requiereKeydown(event)">
+            <div class="ac-dropdown" id="ac-requiere"></div>
+          </div>
+          <div class="tag-chips" id="requiere-chips"></div>
+          <input type="hidden" id="add-requiere">
+        </div>
       </div>
       <div class="input-row">
         <div class="input-group"><label class="input-label">Estado teoría</label>
@@ -582,6 +638,183 @@ function saveDB(db) {
 
 function getGistConfig() {
   try { return JSON.parse(localStorage.getItem(GIST_CONFIG_KEY)) || {}; } catch { return {}; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTOCOMPLETE — dominios, tags, requiere
+// ═══════════════════════════════════════════════════════════════
+function getKnownDomains() {
+  const db = getDB();
+  return [...new Set(db.conceptos.map(c => c.dominio).filter(Boolean))].sort();
+}
+
+function getKnownTags() {
+  const db = getDB();
+  return [...new Set(db.conceptos.flatMap(c => c.tags || []).filter(Boolean))].sort();
+}
+
+// Current tag/requiere chip state for the add modal
+let _addTags = [];
+let _addRequiere = []; // array of {id, nombre}
+
+function acDominio(inp) {
+  const q = inp.value.toLowerCase().trim();
+  const known = getKnownDomains();
+  const matches = q ? known.filter(d => d.toLowerCase().includes(q)) : known;
+  const dd = document.getElementById('ac-dominio');
+  if (!matches.length) { dd.classList.remove('open'); return; }
+  dd.innerHTML = matches.map(d => `<div class="ac-item" onmousedown="pickDominio('${d}')">${d}</div>`).join('');
+  dd.classList.add('open');
+}
+
+function pickDominio(val) {
+  document.getElementById('add-dominio').value = val;
+  document.getElementById('ac-dominio').classList.remove('open');
+}
+
+function acTag(inp) {
+  const raw = inp.value;
+  // Only autocomplete the last segment after a comma
+  const parts = raw.split(',');
+  const q = parts[parts.length - 1].trim().toLowerCase();
+  const known = getKnownTags();
+  const existing = _addTags.map(t => t.toLowerCase());
+  const matches = (q ? known.filter(t => t.toLowerCase().includes(q)) : known).filter(t => !existing.includes(t.toLowerCase()));
+  const dd = document.getElementById('ac-tags');
+  if (!matches.length) { dd.classList.remove('open'); return; }
+  dd.innerHTML = matches.map(t => `<div class="ac-item" onmousedown="pickTag('${t}')">${t}</div>`).join('');
+  dd.classList.add('open');
+}
+
+function pickTag(val) {
+  addTagChip(val);
+  document.getElementById('add-tags-input').value = '';
+  document.getElementById('ac-tags').classList.remove('open');
+}
+
+function tagKeydown(e) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = e.target.value.replace(/,/g,'').trim();
+    if (val) { addTagChip(val); e.target.value = ''; }
+    document.getElementById('ac-tags').classList.remove('open');
+  } else if (e.key === 'Backspace' && !e.target.value) {
+    _addTags.pop();
+    renderTagChips();
+  }
+}
+
+function addTagChip(val) {
+  val = val.trim();
+  if (!val || _addTags.includes(val)) return;
+  _addTags.push(val);
+  renderTagChips();
+  syncHiddenTags();
+}
+
+function removeTagChip(idx) {
+  _addTags.splice(idx, 1);
+  renderTagChips();
+  syncHiddenTags();
+}
+
+function renderTagChips() {
+  document.getElementById('tags-chips').innerHTML = _addTags.map((t,i) =>
+    `<span class="tag-chip">${t}<span class="tag-chip-remove" onclick="removeTagChip(${i})">×</span></span>`
+  ).join('');
+}
+
+function syncHiddenTags() {
+  document.getElementById('add-tags').value = _addTags.join(',');
+}
+
+// Requiere autocomplete (by concept name or id)
+function acRequiere(inp) {
+  const q = inp.value.trim().toLowerCase();
+  const db = getDB();
+  const existingIds = _addRequiere.map(r => r.id);
+  const matches = db.conceptos
+    .filter(c => !existingIds.includes(c.id) && (c.nombre.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)))
+    .slice(0, 8);
+  const dd = document.getElementById('ac-requiere');
+  if (!q && !matches.length) { dd.classList.remove('open'); return; }
+  if (!matches.length && q) { dd.classList.remove('open'); return; }
+  dd.innerHTML = matches.map(c =>
+    `<div class="ac-item" onmousedown="pickRequiere('${c.id}','${c.nombre.replace(/'/g,"\\'")}')">
+      ${c.nombre}<span class="ac-item-tag">${c.id}</span>
+    </div>`
+  ).join('');
+  dd.classList.add('open');
+}
+
+function pickRequiere(id, nombre) {
+  addRequiereChip(id, nombre);
+  document.getElementById('add-requiere-input').value = '';
+  document.getElementById('ac-requiere').classList.remove('open');
+}
+
+function requiereKeydown(e) {
+  if (e.key === 'Backspace' && !e.target.value) {
+    _addRequiere.pop();
+    renderRequiereChips();
+    syncHiddenRequiere();
+  }
+}
+
+function addRequiereChip(id, nombre) {
+  if (_addRequiere.find(r => r.id === id)) return;
+  _addRequiere.push({id, nombre});
+  renderRequiereChips();
+  syncHiddenRequiere();
+}
+
+function removeRequiereChip(idx) {
+  _addRequiere.splice(idx, 1);
+  renderRequiereChips();
+  syncHiddenRequiere();
+}
+
+function renderRequiereChips() {
+  document.getElementById('requiere-chips').innerHTML = _addRequiere.map((r,i) =>
+    `<span class="tag-chip" style="background:rgba(74,222,128,0.1);color:var(--green);border-color:rgba(74,222,128,0.2);">${r.nombre}<span class="ac-item-tag" style="color:var(--text3);margin-left:4px;">${r.id}</span><span class="tag-chip-remove" onclick="removeRequiereChip(${i})">×</span></span>`
+  ).join('');
+}
+
+function syncHiddenRequiere() {
+  document.getElementById('add-requiere').value = _addRequiere.map(r => r.id).join(',');
+}
+
+function acBlur(ddId) {
+  // Slight delay so mousedown on item fires first
+  setTimeout(() => { const dd = document.getElementById(ddId); if(dd) dd.classList.remove('open'); }, 150);
+}
+
+// Reset chip state when opening the add modal
+function resetChipState() {
+  _addTags = [];
+  _addRequiere = [];
+  renderTagChips();
+  renderRequiereChips();
+  syncHiddenTags();
+  syncHiddenRequiere();
+  document.getElementById('add-tags-input').value = '';
+  document.getElementById('add-requiere-input').value = '';
+}
+
+// Load chips from existing concept (for edit)
+function loadChipsFromConcept(c) {
+  _addTags = [...(c.tags || [])];
+  _addRequiere = (c.requiere || []).map(id => {
+    const db = getDB();
+    const ref = db.conceptos.find(x => x.id === id);
+    return { id, nombre: ref ? ref.nombre : id };
+  });
+  renderTagChips();
+  renderRequiereChips();
+  syncHiddenTags();
+  syncHiddenRequiere();
+  document.getElementById('add-tags-input').value = '';
+  document.getElementById('add-requiere-input').value = '';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -884,20 +1117,19 @@ function showEditModal(id) {
   document.getElementById('add-nombre').value = c.nombre;
   document.getElementById('add-dominio').value = c.dominio;
   document.getElementById('add-definicion').value = c.definicion_actual;
-  document.getElementById('add-tags').value = c.tags.join(', ');
-  document.getElementById('add-requiere').value = (c.requiere||[]).join(', ');
   document.getElementById('add-estado-teoria').value = c.estado_teoria;
   document.getElementById('add-estado-practica').value = c.estado_practica;
-  // Set editing mode
+  loadChipsFromConcept(c);
   document.querySelector('#modal-add .modal-title').textContent = 'Editar Concepto';
   document.querySelector('#modal-add .btn-primary').onclick = () => saveConcept(id);
   openModal('modal-add');
 }
 
 function showAddModal() {
-  ['add-nombre','add-dominio','add-definicion','add-tags','add-requiere'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['add-nombre','add-dominio','add-definicion'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   document.getElementById('add-estado-teoria').value = 'nuevo';
   document.getElementById('add-estado-practica').value = 'nuevo';
+  resetChipState();
   document.querySelector('#modal-add .modal-title').textContent = 'Nuevo Concepto';
   document.querySelector('#modal-add .btn-primary').onclick = () => addConcept();
   openModal('modal-add');
@@ -911,8 +1143,8 @@ function addConcept() {
 
   const db = getDB();
   const id = String(Date.now());
-  const tags = document.getElementById('add-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
-  const requiere = document.getElementById('add-requiere').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const tags = _addTags.slice();
+  const requiere = _addRequiere.map(r => r.id);
 
   db.conceptos.push({
     id, nombre, dominio, tags,
@@ -947,8 +1179,8 @@ function saveConcept(id) {
     c.definicion_actual = definicion;
   }
   c.nombre = nombre; c.dominio = dominio;
-  c.tags = document.getElementById('add-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
-  c.requiere = document.getElementById('add-requiere').value.split(',').map(t=>t.trim()).filter(Boolean);
+  c.tags = _addTags.slice();
+  c.requiere = _addRequiere.map(r => r.id);
   c.estado_teoria = document.getElementById('add-estado-teoria').value;
   c.estado_practica = document.getElementById('add-estado-practica').value;
   saveDB(db);
@@ -1255,11 +1487,51 @@ function importJSON(e) {
   reader.onload = ev => {
     try {
       const db = JSON.parse(ev.target.result);
-      if (!db.conceptos) throw new Error('Formato inválido');
+      if (!db.conceptos) throw new Error('Formato inválido — falta campo "conceptos"');
+
+      let fixedIds = 0, fixedFsrs = 0;
+      // Auto-assign IDs to concepts that are missing them or have placeholder values
+      const usedIds = new Set(db.conceptos.filter(c => c.id && c.id !== 'AUTOGENERADO_POR_APP').map(c => String(c.id)));
+      db.conceptos = db.conceptos.map(c => {
+        // Fix missing or placeholder ID
+        if (!c.id || c.id === 'AUTOGENERADO_POR_APP' || String(c.id).trim() === '') {
+          let newId = String(Date.now() + Math.floor(Math.random()*9999));
+          while (usedIds.has(newId)) newId = String(Date.now() + Math.floor(Math.random()*9999));
+          usedIds.add(newId);
+          c.id = newId;
+          fixedIds++;
+        }
+        // Sanitize FSRS block — fill in any missing fields
+        if (!c.fsrs || typeof c.fsrs !== 'object') {
+          c.fsrs = {}; fixedFsrs++;
+        }
+        c.fsrs = {
+          stability: typeof c.fsrs.stability === 'number' ? c.fsrs.stability : 0,
+          difficulty: typeof c.fsrs.difficulty === 'number' ? c.fsrs.difficulty : 5,
+          due: c.fsrs.due || today(),
+          last_review: c.fsrs.last_review || null,
+          reps: typeof c.fsrs.reps === 'number' ? c.fsrs.reps : 0,
+          lapses: typeof c.fsrs.lapses === 'number' ? c.fsrs.lapses : 0,
+          state: c.fsrs.state || 'new'
+        };
+        // Ensure required arrays exist
+        if (!Array.isArray(c.tags)) c.tags = [];
+        if (!Array.isArray(c.requiere)) c.requiere = [];
+        if (!Array.isArray(c.mejoras_acumuladas)) c.mejoras_acumuladas = [];
+        if (!Array.isArray(c.ultimos_ejercicios)) c.ultimos_ejercicios = [];
+        if (!Array.isArray(c.errores_previos)) c.errores_previos = [];
+        if (!Array.isArray(c.historial_definiciones)) {
+          c.historial_definiciones = [{ fecha: today(), texto: c.definicion_actual || '' }];
+        }
+        return c;
+      });
+
       if (!confirm(`Importar ${db.conceptos.length} conceptos? Esto reemplazará la BD actual.`)) return;
       saveDB(db);
       renderDashboard();
-      toast(`✓ ${db.conceptos.length} conceptos importados`);
+      let msg = `✓ ${db.conceptos.length} conceptos importados`;
+      if (fixedIds) msg += ` · ${fixedIds} IDs auto-asignados`;
+      toast(msg);
     } catch (err) { toast('Error al importar: ' + err.message); }
   };
   reader.readAsText(file);
@@ -1294,46 +1566,43 @@ Eres un sistema avanzado de tutoría diseñado para gestionar y expandir mi cono
 
 ## 1. INICIO DE SESIÓN — CALIBRACIÓN COGNITIVA
 
-Al inicio de cada sesión pregunta: **"¿Cómo estás hoy para estudiar?"** (a menos que el campo "energia" en el JSON ya esté especificado)
-
-Lee la respuesta libremente y actúa según estas reglas:
+Al inicio de cada sesión pregunta: "¿Cómo estás hoy para estudiar?" (a menos que el campo "energia" en el JSON ya esté especificado, en cuyo caso úsalo directamente).
 
 ### Si detectas cansancio, poco tiempo, estrés o similar:
 - Solo revisa conceptos que el usuario ya conoce (estado_teoria ≠ "nuevo") y cuyos errores previos sean de tipo confusion_conceptual simple o error_de_aplicacion de dificultad ≤ 2.
 - Mantén la dificultad de ejercicios en el nivel actual del concepto — sin subir.
-- Prohibido: +1kg, interleaving, free recall, conceptos con estado_teoria = "nuevo".
-- Los ejercicios deben poder resolverse en menos de 5 minutos estimados.
+- PROHIBIDO: +1kg, interleaving, free recall, conceptos con estado_teoria = "nuevo".
+- Los ejercicios deben poder resolverse en menos de 5 minutos.
 
 ### Si la respuesta es neutral o no da señales claras:
-- Flujo estándar: conceptos pendientes por repaso según algoritmo, dificultad sube hasta +1, +1kg si aplica.
+- Flujo estándar: conceptos pendientes, dificultad sube hasta +1, +1kg si aplica.
 
 ### Si menciona energía alta, tiempo disponible, o pide sesión intensa:
-- Todos los conceptos con repaso pendiente, dificultad puede subir hasta +1.5, interleaving multidisciplinario habilitado, free recall habilitado.
+- Dificultad puede subir hasta +1.5, interleaving multidisciplinario habilitado, free recall habilitado.
 
 ---
 
 ## 2. DATOS DE SESIÓN
 
 Recibirás un JSON con dos secciones:
-1. **indice_global**: todos los conceptos del usuario (id, nombre, dominio, tags, estados) — úsalo para armar ejercicios multidisciplinarios.
-2. **sesion.conceptos_hoy**: los conceptos a revisar hoy con todo el detalle necesario.
+1. "indice_global": todos los conceptos del usuario (id, nombre, dominio, tags, estados) — úsalo para armar ejercicios multidisciplinarios y combinar conceptos de distintos dominios.
+2. "sesion.conceptos_hoy": los conceptos a revisar hoy con todo el detalle necesario.
 
 ---
 
 ## 3. PROTOCOLO DE INTERACCIÓN
 
-### Paso 0: Metacognición previa (siempre, sin excepción)
-Antes de que yo dé mi definición de cualquier concepto, pregunta:
-> "Del 1 al 5, ¿qué tan seguro estás de este concepto?"
+### Paso 0: Metacognición previa (SIEMPRE, sin excepción)
+Antes de que el usuario dé su definición de cualquier concepto, pregunta:
+"Del 1 al 5, ¿qué tan seguro estás de este concepto?"
 
-Usa la respuesta así:
 - 4–5 y fallo → falso_positivo. Prioridad máxima. Pesa el doble en futuros repasos.
-- 1–2 y acierto → concepto más frágil de lo que parece; nota esto.
+- 1–2 y acierto → concepto más frágil de lo que parece; reduce el intervalo de repaso.
 - 3 → neutro, protocolo normal.
 
 ### Paso 1: Validación
 - Correcto → Confirma brevemente. Continúa.
-- Incorrecto o confuso → Señálalo, da la corrección precisa y categoriza el error.
+- Incorrecto o confuso → Señálalo, da la corrección precisa y categoriza el error como uno de: confusion_conceptual | error_de_aplicacion | falso_positivo | otro
 
 ### Paso 2: Respuesta de seguimiento — completamente aleatoria
 Elige de forma no determinista entre:
@@ -1344,26 +1613,24 @@ Elige de forma no determinista entre:
 - Silencio activo (solo confirmar y pasar al siguiente)
 
 ### Paso 3: Sobrecarga Progresiva (+1kg)
-Activa solo si: estado_teoria = "dominado" Y estado_practica = "dominado" Y tercera respuesta correcta consecutiva Y sesión de energía normal o alta.
+Activa SOLO si: estado_teoria = "dominado" Y estado_practica = "dominado" Y tercera respuesta correcta consecutiva Y sesión de energía normal o alta. La carga debe ser mínima: una característica, excepción o conexión.
 
 ---
 
 ## 4. GENERACIÓN DE EJERCICIOS PRÁCTICOS
 
-El nuevo ejercicio debe tener dificultad = último + 0.5 o +1 máximo. Nunca repitas el mismo formato dos veces seguidas para el mismo concepto.
+El nuevo ejercicio debe tener dificultad = último + 0.5 o +1 máximo. Nunca el mismo formato dos veces seguidas para el mismo concepto. El ejercicio ocurre en un escenario concreto y real.
 
-Escala de dificultad:
-- 1 — Reconocer o identificar el concepto en un ejemplo dado
-- 2 — Aplicar en un caso simple y directo
-- 3 — Aplicar con una variable adicional de complejidad
-- 4 — Usar dentro de un sistema con múltiples piezas
-- 5 — Detectar, corregir o razonar en contexto ambiguo
+Escala de dificultad (1–5):
+1 — Reconocer o identificar el concepto en un ejemplo dado
+2 — Aplicar en un caso simple y directo
+3 — Aplicar con una variable adicional de complejidad
+4 — Usar dentro de un sistema con múltiples piezas
+5 — Detectar, corregir o razonar en contexto ambiguo o con información incompleta
 
 ---
 
-## 5. FORMATO DE RESPUESTA
-
-Usa siempre este formato:
+## 5. FORMATO DE RESPUESTA DURANTE LA SESIÓN
 
 🧠 Confianza reportada: [1–5]
 ✅ / ❌ / ⚠️ Resultado: [Correcto / Incorrecto / Confuso]
@@ -1377,50 +1644,115 @@ Usa siempre este formato:
 
 ---
 
-## 6. AL FINALIZAR LA SESIÓN
+## 6. AL FINALIZAR LA SESIÓN — JSON DE ACTUALIZACIÓN
 
-Cuando el usuario diga "terminar sesión" o "dame el JSON de actualización", devuelve ÚNICAMENTE este JSON (sin texto adicional):
+Cuando el usuario diga "terminar sesión" o "dame el JSON de actualización", devuelve ÚNICAMENTE el JSON a continuación, sin texto adicional, sin bloques de código markdown, sin explicaciones. Solo el JSON puro.
+
+REGLAS ESTRICTAS DEL JSON DE ACTUALIZACIÓN:
+- Devuelve SOLO los campos que cambiaron. Si un campo no cambió, OMÍTELO completamente del objeto — no lo incluyas como null excepto donde se indica explícitamente.
+- Nunca inventes IDs. Usa exclusivamente los IDs que vinieron en el JSON de sesión.
+- calificacion_fsrs es OBLIGATORIO para cada concepto revisado. Nunca lo omitas.
+- Los únicos valores válidos para estado_teoria y estado_practica son exactamente: "nuevo" | "fallas" | "en_progreso" | "dominado"
+- Los únicos valores válidos para tipo en nuevo_error son exactamente: "confusion_conceptual" | "error_de_aplicacion" | "falso_positivo" | "otro"
+- Los únicos valores válidos para calificacion_fsrs son exactamente: 1, 2, 3, 4 (enteros)
+- Los únicos valores válidos para dificultad en nuevo_ejercicio son exactamente: 1, 2, 3, 4, 5 (enteros o con .5)
+
+EJEMPLO COMPLETAMENTE DOCUMENTADO:
 
 {
   "actualizaciones": [
     {
-      "id": "string",
-      "calificacion_fsrs": 1-4,
-      "estado_teoria": "nuevo|fallas|en_progreso|dominado",
-      "estado_practica": "nuevo|fallas|en_progreso|dominado",
-      "definicion_refinada": "string o null",
-      "nueva_mejora": "string o null",
+      "id": "001",
+      // OBLIGATORIO. Usar el ID exacto del JSON de sesión. Nunca inventar.
+
+      "calificacion_fsrs": 3,
+      // OBLIGATORIO SIEMPRE. Escala:
+      //   1 = Olvido total — no recordó nada, requiere reaprendizaje
+      //   2 = Difícil — recordó con esfuerzo significativo, hubo errores
+      //   3 = Bien — recordó correctamente con esfuerzo normal
+      //   4 = Fácil — recordó sin esfuerzo, respuesta fluida
+      // La app recalcula internamente stability, difficulty, due con este número.
+      // La IA NUNCA modifica esos parámetros. Solo manda este número entero.
+
+      "estado_teoria": "dominado",
+      // OPCIONAL. Solo incluir si cambió durante esta sesión.
+      // Valores válidos EXACTAMENTE: "nuevo" | "fallas" | "en_progreso" | "dominado"
+      // Si no cambió, OMITIR este campo completamente.
+
+      "estado_practica": "en_progreso",
+      // OPCIONAL. Misma regla que estado_teoria.
+      // Si no cambió, OMITIR este campo completamente.
+
+      "definicion_refinada": "Patrón donde una clase declara sus dependencias como parámetros en lugar de instanciarlas, permitiendo que un agente externo las provea. Esto reduce acoplamiento y hace el código testeable.",
+      // OPCIONAL. Solo si la definición mejoró significativamente durante la sesión.
+      // Si no mejoró, OMITIR este campo completamente (no mandar null).
+      // La app: mueve definicion_actual al historial con fecha de hoy, reemplaza con este valor.
+
+      "nueva_mejora": "Puede implementarse mediante constructor, setter o interfaz — 2026-05-04",
+      // OPCIONAL. Solo si aplicó +1kg y hay algo concreto que agregar.
+      // Formato sugerido: "descripción de la mejora — YYYY-MM-DD"
+      // La app hace append a mejoras_acumuladas. Nunca reemplaza el historial.
+      // Si no aplica, OMITIR este campo completamente.
+
       "nuevo_ejercicio": {
-        "descripcion": "string",
-        "formato": "string",
-        "dificultad": 1-5
+        "descripcion": "Tienes un sistema de pagos con PaypalService instanciado dentro de OrderService. Diseña la refactorización completa usando DI por constructor e identifica qué cambiaría en los tests.",
+        "formato": "diseñar",
+        "dificultad": 4
       },
-      "nuevo_error": {
-        "descripcion": "string",
-        "tipo": "confusion_conceptual|error_de_aplicacion|falso_positivo|otro",
-        "concepto_relacionado_id": "string o null"
-      },
-      "error_corregido_id": "string o null"
+      // RECOMENDADO siempre que se haya hecho un ejercicio.
+      // La app: elimina el ejercicio más antiguo de ultimos_ejercicios y agrega este al final.
+      // Máximo 3 ejercicios se mantienen en el historial.
+      // dificultad debe ser entero o .5, entre 1 y 5.
+      // Si no se hizo ejercicio, OMITIR este campo.
+
+      "nuevo_error": null,
+      // Si hubo error nuevo en esta sesión, reemplazar null por:
+      // {
+      //   "descripcion": "descripción clara del error cometido",
+      //   "tipo": "confusion_conceptual" | "error_de_aplicacion" | "falso_positivo" | "otro",
+      //   "concepto_relacionado_id": "id_del_concepto_confundido_o_null"
+      // }
+      // La app genera id_error automáticamente y hace append a errores_previos con corregido: false.
+      // Si no hubo error, mandar null explícitamente (este campo SÍ se manda aunque sea null).
+
+      "error_corregido_id": null
+      // Si un error previo (de errores_pendientes del JSON de sesión) quedó resuelto esta sesión,
+      // mandar aquí el id_error exacto (ej: "e001").
+      // La app actualiza corregido: true en ese error.
+      // Si no hubo corrección, mandar null explícitamente.
     }
   ]
 }
 
-Escala calificacion_fsrs: 1=Olvido total, 2=Difícil, 3=Bien, 4=Fácil
-Omite campos si no aplican. nuevo_error y nuevo_ejercicio pueden ser null.
+---
+
+## 7. REGLAS DE FUSIÓN EN LA APP (para tu contexto — no modifiques estos campos)
+
+| Campo                    | Regla                                                                                        |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| definicion_actual        | Si viene definicion_refinada: mover actual a historial con fecha, reemplazar con la nueva.   |
+| historial_definiciones   | Solo append. Nunca se borra ninguna versión.                                                  |
+| ultimos_ejercicios       | Si viene nuevo_ejercicio: eliminar el más antiguo (índice 0), agregar al final. Máx 3.       |
+| errores_previos          | Si viene nuevo_error: append con id autogenerado y corregido: false. Nunca modificar existentes. |
+| corregido                | Si viene error_corregido_id: buscar por id y cambiar corregido: true.                        |
+| mejoras_acumuladas       | Si viene nueva_mejora: append. Nunca reemplaza.                                               |
+| estado_teoria/practica   | Reemplazar solo si viene explícito en el diff. Si la IA lo omite, la app no lo toca.        |
+| Parámetros FSRS          | La app los recalcula con calificacion_fsrs. La IA NUNCA los toca.                            |
+| id, nombre, dominio, tags, requiere | INMUTABLES. La app nunca los modifica desde el diff.                          |
 
 ---
 
-## 7. REGLAS DE ORO (nunca violar)
+## 8. REGLAS DE ORO (nunca violar)
 
 1. Sistema multidisciplinario. Adapta lenguaje, ejemplos y formatos al dominio del concepto.
 2. Nunca +1kg si estado_practica no está en "dominado".
-3. Nunca repitas el mismo formato de ejercicio dos veces seguidas para el mismo concepto.
-4. Siempre pregunta la confianza antes de recibir la definición. Sin excepción.
+3. Nunca el mismo formato de ejercicio dos veces seguidas para el mismo concepto.
+4. Siempre pregunta la confianza (1–5) antes de recibir la definición. Sin excepción.
 5. Un falso positivo pesa el doble en el algoritmo de repaso.
-6. Si un concepto falla y tiene prerequisitos sin evaluar, retrocede a evaluarlos.
+6. Si un concepto falla y tiene prerequisitos sin evaluar en la sesión, retrocede a evaluarlos primero.
 7. Con poca energía: sin +1kg, sin interleaving, sin free recall, sin conceptos nuevos.
-8. No hay disparadores fijos. La aleatoriedad es real.
-9. Nunca ajustes el ritmo sin preguntar primero.`;
+8. No hay disparadores fijos de tiempo ni de número de interacciones. La aleatoriedad es real.
+9. Nunca ajustes el ritmo de la sesión sin preguntar primero, y solo si los tres indicadores de cansancio ocurren simultáneamente con 95% de certeza.`;
 }
 
 // ═══════════════════════════════════════════════════════════════
