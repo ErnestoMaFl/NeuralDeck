@@ -1205,7 +1205,17 @@ function showAddModal() {
   openModal('modal-add');
 }
 
+// Flush whatever is typed in the tag input that hasn't been confirmed yet
+function flushPendingTagInput() {
+  const inp = document.getElementById('add-tags-input');
+  if (!inp) return;
+  const val = inp.value.replace(/,/g, '').trim();
+  if (val) { addTagChip(val); inp.value = ''; }
+  document.getElementById('ac-tags').classList.remove('open');
+}
+
 function addConcept() {
+  flushPendingTagInput();
   const nombre = document.getElementById('add-nombre').value.trim();
   const dominio = document.getElementById('add-dominio').value.trim();
   const definicion = document.getElementById('add-definicion').value.trim();
@@ -1235,6 +1245,7 @@ function addConcept() {
 }
 
 function saveConcept(id) {
+  flushPendingTagInput();
   const db = getDB();
   const c = db.conceptos.find(x => x.id === id);
   if (!c) return;
@@ -1448,11 +1459,13 @@ function applyDiff() {
 // ═══════════════════════════════════════════════════════════════
 function renderConfig() {
   const cfg = getGistConfig();
-  if (cfg.token) {
-    document.getElementById('gh-token').value = cfg.token;
-    document.getElementById('gist-id').value = cfg.gistId || '';
-    updateGistStatus('configured');
-  }
+  // Always populate fields from whatever is saved, even if partial
+  const tokenEl = document.getElementById('gh-token');
+  const gistEl = document.getElementById('gist-id');
+  if (tokenEl && cfg.token) tokenEl.value = cfg.token;
+  if (gistEl) gistEl.value = cfg.gistId || '';
+  if (cfg.token || cfg.gistId) updateGistStatus('configured');
+  updateAutosaveToggleBtn();
 }
 
 function updateGistStatus(state) {
@@ -1467,56 +1480,80 @@ function updateGistStatus(state) {
 function saveGistConfig() {
   const token = document.getElementById('gh-token').value.trim();
   const gistId = document.getElementById('gist-id').value.trim();
-  if (!token) { toast('Ingresa un token de GitHub'); return; }
-  localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify({ token, gistId }));
-  updateGistStatus('configured');
+  if (!token && !gistId) { toast('Ingresa al menos el Gist ID o el token'); return; }
+  const existing = getGistConfig();
+  const merged = { token: token || existing.token || '', gistId: gistId || existing.gistId || '' };
+  localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(merged));
+  if (merged.token || merged.gistId) updateGistStatus('configured');
   toast('Configuración guardada ✓');
 }
 
 async function syncGist(direction) {
-  const cfg = getGistConfig();
-  if (!cfg.token) { toast('Configura el token de GitHub primero'); return; }
+  // Read live from inputs first (user may have typed without saving)
+  const tokenInput = document.getElementById('gh-token')?.value.trim();
+  const gistInput  = document.getElementById('gist-id')?.value.trim();
+  const saved = getGistConfig();
+  const token  = tokenInput  || saved.token  || '';
+  const gistId = gistInput   || saved.gistId || '';
+
+  const dot = document.getElementById('gist-dot');
+  const txt = document.getElementById('gist-status-text');
   updateGistStatus('syncing');
 
   try {
     if (direction === 'push') {
+      if (!token) { toast('Se necesita token para subir a Gist'); updateGistStatus(saved.token?'configured':'error'); return; }
       const db = getDB();
       const content = JSON.stringify(db, null, 2);
-      let res;
-      if (cfg.gistId) {
-        res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
+      let res, newGistId = gistId;
+
+      if (gistId) {
+        res = await fetch(`https://api.github.com/gists/${gistId}`, {
           method: 'PATCH',
-          headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ files: { 'neuraldeck_db.json': { content } } })
         });
+        if (!res.ok) throw new Error(`Error al subir: ${res.status} ${res.statusText}`);
       } else {
+        // Create new gist
         res = await fetch('https://api.github.com/gists', {
           method: 'POST',
-          headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
+          headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ description: 'NeuralDeck BD', public: false, files: { 'neuraldeck_db.json': { content } } })
         });
+        if (!res.ok) throw new Error(`Error al crear Gist: ${res.status} ${res.statusText}`);
         const data = await res.json();
-        cfg.gistId = data.id;
-        localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(cfg));
-        document.getElementById('gist-id').value = cfg.gistId;
+        newGistId = data.id;
+        const gistEl = document.getElementById('gist-id');
+        if (gistEl) gistEl.value = newGistId;
       }
-      if (!res.ok) throw new Error('Error al subir: ' + res.status);
+
+      // Always persist latest token + gistId
+      localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify({ token, gistId: newGistId }));
       updateGistStatus('configured');
-      toast('⬆ BD subida a Gist ✓');
+      toast('⬆ BD subida a Gist ✓' + (newGistId !== gistId ? ' · Gist ID guardado' : ''));
+
     } else {
-      if (!cfg.gistId) { toast('Ingresa el Gist ID primero'); updateGistStatus('configured'); return; }
-      const res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
-        headers: { 'Authorization': `token ${cfg.token}` }
-      });
-      if (!res.ok) throw new Error('Error al descargar: ' + res.status);
+      // PULL — gistId required, token optional (works for private if token present)
+      if (!gistId) { toast('Ingresa el Gist ID en Config → Gist primero'); updateGistStatus(token?'configured':'error'); return; }
+      const headers = token ? { 'Authorization': `token ${token}` } : {};
+      const res = await fetch(`https://api.github.com/gists/${gistId}`, { headers });
+      if (!res.ok) throw new Error(`Error al descargar: ${res.status} ${res.statusText}`);
       const data = await res.json();
       const file = data.files['neuraldeck_db.json'];
-      if (!file) throw new Error('Archivo no encontrado en el Gist');
-      const db = sanitizeDB(JSON.parse(file.content));
-      const fixed = db.conceptos.filter(c => !JSON.parse(file.content).conceptos?.find?.(x => x.id === c.id)).length;
+      if (!file) throw new Error('Archivo "neuraldeck_db.json" no encontrado en el Gist');
+      // Gist may return truncated content — fetch raw_url if needed
+      let rawContent = file.content;
+      if (file.truncated) {
+        const raw = await fetch(file.raw_url, { headers });
+        rawContent = await raw.text();
+      }
+      const db = sanitizeDB(JSON.parse(rawContent));
       saveDB(db);
+      // Persist config so this compu also has it saved
+      localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify({ token, gistId }));
       updateGistStatus('configured');
-      toast('⬇ BD descargada de Gist ✓');
+      toast(`⬇ BD descargada — ${db.conceptos.length} conceptos`);
       renderDashboard();
     }
   } catch (e) {
@@ -1908,8 +1945,13 @@ function updateAutosaveToggleBtn() {
 }
 
 async function runAutosave(silent = false) {
-  const cfg = getGistConfig();
-  if (!cfg.token) {
+  const saved = getGistConfig();
+  const tokenInput = document.getElementById('gh-token')?.value.trim();
+  const gistInput  = document.getElementById('gist-id')?.value.trim();
+  const token  = tokenInput  || saved.token  || '';
+  const gistId = gistInput   || saved.gistId || '';
+
+  if (!token) {
     setAutosaveStatus('error', 'sin token' + (getLastSavedTime() ? ` · ${getLastSavedTime()}` : ''));
     if (!silent) toast('⚠ Configura el token de GitHub para usar autoguardado');
     return;
@@ -1926,26 +1968,26 @@ async function runAutosave(silent = false) {
   try {
     const db = getDB();
     const content = JSON.stringify(db, null, 2);
-    let res;
+    let res, newGistId = gistId;
 
-    if (cfg.gistId) {
-      res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
+    if (gistId) {
+      res = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: 'PATCH',
-        headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: { 'neuraldeck_db.json': { content } } })
       });
     } else {
       res = await fetch('https://api.github.com/gists', {
         method: 'POST',
-        headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ description: 'NeuralDeck BD', public: false, files: { 'neuraldeck_db.json': { content } } })
       });
       if (res.ok) {
         const data = await res.json();
-        cfg.gistId = data.id;
-        localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(cfg));
-        const gistInput = document.getElementById('gist-id');
-        if (gistInput) gistInput.value = cfg.gistId;
+        newGistId = data.id;
+        localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify({ token, gistId: newGistId }));
+        const gistEl = document.getElementById('gist-id');
+        if (gistEl) gistEl.value = newGistId;
       }
     }
 
@@ -1954,7 +1996,7 @@ async function runAutosave(silent = false) {
     lastSavedHash = currentHash;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-    setLastSavedTime(timeStr); // persist even if autosave later turns off
+    setLastSavedTime(timeStr);
     setAutosaveStatus('idle', `guardado ${timeStr}`);
     if (!silent) toast(`☁ Autoguardado — ${timeStr}`);
     updateGistStatus('configured');
