@@ -1504,6 +1504,46 @@ async function syncGist(direction) {
     if (direction === 'push') {
       if (!token) { toast('Se necesita token para subir a Gist'); updateGistStatus(saved.token?'configured':'error'); return; }
       const db = getDB();
+
+      // SAFETY: never push an empty or near-empty DB
+      if (db.conceptos.length === 0) {
+        toast('⛔ Push bloqueado — BD local vacía. Descarga primero si tienes datos en Gist.');
+        updateGistStatus(gistId ? 'configured' : 'error');
+        return;
+      }
+
+      // SAFETY: if gistId exists, fetch remote count first and warn if local has fewer concepts
+      if (gistId) {
+        try {
+          const headers = token ? { 'Authorization': `token ${token}` } : {};
+          const checkRes = await fetch(`https://api.github.com/gists/${gistId}`, { headers });
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            const checkFile = checkData.files['neuraldeck_db.json'];
+            if (checkFile) {
+              let remoteContent = checkFile.content;
+              if (checkFile.truncated) {
+                const raw = await fetch(checkFile.raw_url, { headers });
+                remoteContent = await raw.text();
+              }
+              const remoteDB = JSON.parse(remoteContent);
+              const remoteCount = remoteDB.conceptos?.length || 0;
+              const localCount = db.conceptos.length;
+              if (localCount < remoteCount) {
+                const ok = confirm(
+                  `⚠️ ADVERTENCIA\n\n` +
+                  `Gist remoto tiene ${remoteCount} conceptos.\n` +
+                  `Tu BD local tiene ${localCount} conceptos.\n\n` +
+                  `Subir SOBREESCRIBIRÁ el Gist con menos datos.\n\n` +
+                  `¿Estás seguro? Considera hacer Pull primero.`
+                );
+                if (!ok) { updateGistStatus('configured'); return; }
+              }
+            }
+          }
+        } catch (_) { /* if check fails just proceed */ }
+      }
+
       const content = JSON.stringify(db, null, 2);
       let res, newGistId = gistId;
 
@@ -1536,6 +1576,18 @@ async function syncGist(direction) {
     } else {
       // PULL — gistId required, token optional (works for private if token present)
       if (!gistId) { toast('Ingresa el Gist ID en Config → Gist primero'); updateGistStatus(token?'configured':'error'); return; }
+
+      // SAFETY: warn if local has data that would be replaced
+      const localDB = getDB();
+      if (localDB.conceptos.length > 0) {
+        const ok = confirm(
+          `⚠️ ADVERTENCIA\n\n` +
+          `Tu BD local tiene ${localDB.conceptos.length} conceptos.\n\n` +
+          `Descargar de Gist REEMPLAZARÁ tu BD local.\n\n` +
+          `¿Continuar?`
+        );
+        if (!ok) { updateGistStatus(token?'configured':'error'); return; }
+      }
       const headers = token ? { 'Authorization': `token ${token}` } : {};
       const res = await fetch(`https://api.github.com/gists/${gistId}`, { headers });
       if (!res.ok) throw new Error(`Error al descargar: ${res.status} ${res.statusText}`);
@@ -1961,6 +2013,13 @@ async function runAutosave(silent = false) {
   if (currentHash === lastSavedHash) {
     const lastTime = getLastSavedTime();
     setAutosaveStatus('waiting', `activo · sin cambios${lastTime ? ' · ' + lastTime : ''}`);
+    return;
+  }
+
+  // SAFETY: never autosave an empty DB
+  const dbCheck = getDB();
+  if (dbCheck.conceptos.length === 0) {
+    setAutosaveStatus('error', 'bloqueado · BD vacía');
     return;
   }
 
