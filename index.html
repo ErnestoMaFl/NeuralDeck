@@ -314,6 +314,25 @@
   .tag-chip-remove { cursor: pointer; opacity: 0.6; font-size: 13px; line-height: 1; }
   .tag-chip-remove:hover { opacity: 1; }
 
+  /* REVISION TOGGLE */
+  .revision-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    font-family: var(--mono); cursor: pointer; border: 1px solid; transition: all 0.15s; user-select: none;
+  }
+  .revision-off { background: var(--surface2); color: var(--text3); border-color: var(--border); }
+  .revision-off:hover { border-color: var(--yellow); color: var(--yellow); }
+  .revision-on { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(250,204,21,0.4); box-shadow: 0 0 6px rgba(250,204,21,0.2); }
+
+  /* SPLIT BANNER */
+  .split-banner {
+    background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.35);
+    border-radius: var(--radius2); padding: 16px 18px; margin-bottom: 16px;
+  }
+  .split-banner-title { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 6px; }
+  .split-banner-body { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 12px; }
+  .split-banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
   /* FSRS RATING BUTTONS */
   .rating-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .rating-btn {
@@ -1054,6 +1073,9 @@ function renderDashboard() {
 
 function conceptItem(c, mini=false) {
   const dueStr = c.fsrs.due ? (isDue(c) ? '<span style="color:var(--accent2);font-family:var(--mono);font-size:11px;">HOY</span>' : `<span style="color:var(--text3);font-family:var(--mono);font-size:11px;">+${getDueIn(c)}d</span>`) : '';
+  const revBadge = c.revision
+    ? `<span class="revision-badge revision-on" onclick="event.stopPropagation();toggleRevision('${c.id}')">⚑ revisión</span>`
+    : `<span class="revision-badge revision-off" onclick="event.stopPropagation();toggleRevision('${c.id}')">⚑</span>`;
   return `<div class="concept-item ${isDue(c)?'due':''}" onclick="showConceptDetail('${c.id}')">
     <div class="concept-info">
       <div class="concept-name">${c.nombre}</div>
@@ -1062,10 +1084,22 @@ function conceptItem(c, mini=false) {
         ${c.tags.map(t=>`<span class="tag tag-purple">${t}</span>`).join('')}
         <span class="state-pill state-${c.estado_teoria}">T:${c.estado_teoria}</span>
         <span class="state-pill state-${c.estado_practica}">P:${c.estado_practica}</span>
+        ${revBadge}
       </div>
     </div>
     ${dueStr}
   </div>`;
+}
+
+function toggleRevision(id) {
+  const db = getDB();
+  const c = db.conceptos.find(x => x.id === id);
+  if (!c) return;
+  c.revision = !c.revision;
+  saveDB(db);
+  renderConceptList();
+  renderDashboard();
+  toast(c.revision ? '⚑ Marcado para revisión con IA' : '⚑ Revisión desactivada');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1123,10 +1157,15 @@ function showConceptDetail(id) {
 
       <div class="detail-section">
         <div class="detail-section-title">Estados</div>
-        <div style="display:flex;gap:12px;">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
           <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Teoría</div><span class="state-pill state-${c.estado_teoria}">${c.estado_teoria}</span></div>
           <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Práctica</div><span class="state-pill state-${c.estado_practica}">${c.estado_practica}</span></div>
           <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Próximo repaso</div><div style="font-family:var(--mono);font-size:12px;">${c.fsrs.due ? (isDue(c)?'<span style="color:var(--accent2)">HOY</span>':`en ${daysUntilDue}d`) : 'N/A'}</div></div>
+          <div><div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Revisión IA</div>
+            <span class="revision-badge ${c.revision?'revision-on':'revision-off'}" onclick="toggleRevision('${c.id}');this.className='revision-badge '+(document.getElementById&&(getDB().conceptos.find(x=>x.id==='${c.id}')?.revision)?'revision-on':'revision-off')" style="font-size:12px;">
+              ⚑ ${c.revision ? 'activa — la IA priorizará clarificar esta definición' : 'inactiva'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -1325,6 +1364,7 @@ function generateSessionPackage() {
     definicion_actual: c.definicion_actual,
     estado_teoria: c.estado_teoria,
     estado_practica: c.estado_practica,
+    revision: c.revision || false,
     mejoras_acumuladas: c.mejoras_acumuladas || [],
     ultimos_ejercicios: (c.ultimos_ejercicios || []).slice(-3),
     errores_pendientes: (c.errores_previos || []).filter(e => !e.corregido).map(e => ({
@@ -1373,6 +1413,37 @@ function applyDiff() {
     toast('El JSON no tiene el campo "actualizaciones"'); return;
   }
 
+  // Check for split recommendations — show banner before applying
+  const splits = diff.actualizaciones.filter(u => u.split_recomendado === true);
+  if (splits.length > 0) {
+    const db = getDB();
+    window._pendingDiff = diff;
+    const splitBanners = splits.map(upd => {
+      const c = db.conceptos.find(x => x.id === upd.id);
+      const nombre = c ? c.nombre : upd.id;
+      return `<div class="split-banner">
+        <div class="split-banner-title">🔀 División de tarjeta recomendada — ${nombre}</div>
+        <div class="split-banner-body">${upd.split_razon || 'La IA detectó que este concepto creció suficiente para separarse en dos tarjetas independientes.'}</div>
+        <div class="split-banner-actions">
+          <button class="btn btn-primary btn-sm" onclick="createSplitCard('${upd.id}')">✦ Crear tarjeta hija</button>
+          <button class="btn btn-ghost btn-sm" onclick="this.closest('.split-banner').remove()">Ignorar esta vez</button>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('diff-result').innerHTML = splitBanners +
+      `<div style="margin-top:12px;">
+        <button class="btn btn-secondary btn-full" onclick="executeDiff()">⚡ Aplicar diff (acumular en concepto original)</button>
+      </div>`;
+    return;
+  }
+
+  executeDiff(diff);
+}
+
+function executeDiff(diff) {
+  if (!diff) diff = window._pendingDiff;
+  if (!diff) { toast('No hay diff pendiente'); return; }
+
   const db = getDB();
   const results = [];
 
@@ -1384,32 +1455,22 @@ function applyDiff() {
     if (upd.calificacion_fsrs && [1,2,3,4].includes(upd.calificacion_fsrs)) {
       applyFSRSRating(c, upd.calificacion_fsrs);
     }
-
-    // States
-    if (upd.estado_teoria) c.estado_teoria = upd.estado_teoria;
+    if (upd.estado_teoria)  c.estado_teoria  = upd.estado_teoria;
     if (upd.estado_practica) c.estado_practica = upd.estado_practica;
-
-    // Refined definition
     if (upd.definicion_refinada) {
       c.historial_definiciones = c.historial_definiciones || [];
       c.historial_definiciones.push({ fecha: today(), texto: c.definicion_actual });
       c.definicion_actual = upd.definicion_refinada;
     }
-
-    // New improvement
     if (upd.nueva_mejora) {
       c.mejoras_acumuladas = c.mejoras_acumuladas || [];
       c.mejoras_acumuladas.push(upd.nueva_mejora);
     }
-
-    // New exercise (rotate — remove oldest, add new)
     if (upd.nuevo_ejercicio) {
       c.ultimos_ejercicios = c.ultimos_ejercicios || [];
       if (c.ultimos_ejercicios.length >= 3) c.ultimos_ejercicios.shift();
       c.ultimos_ejercicios.push(upd.nuevo_ejercicio);
     }
-
-    // New error
     if (upd.nuevo_error) {
       c.errores_previos = c.errores_previos || [];
       c.errores_previos.push({
@@ -1421,21 +1482,21 @@ function applyDiff() {
         corregido: false
       });
     }
-
-    // Mark error as corrected
     if (upd.error_corregido_id) {
       const err = (c.errores_previos||[]).find(e => e.id_error === upd.error_corregido_id);
       if (err) err.corregido = true;
     }
+    // Auto-clear revision if IA marked it resolved
+    if (upd.revision_resuelta === true) c.revision = false;
 
     results.push({ id: upd.id, nombre: c.nombre, status: 'ok', fsrs: upd.calificacion_fsrs, due: c.fsrs.due });
   });
 
   db.meta.total_sesiones = (db.meta.total_sesiones || 0) + 1;
   saveDB(db);
+  window._pendingDiff = null;
 
-  const resultEl = document.getElementById('diff-result');
-  resultEl.innerHTML = `
+  document.getElementById('diff-result').innerHTML = `
     <div class="card">
       <div class="card-header"><div class="card-title">Resultado de la actualización</div></div>
       ${results.map(r => `
@@ -1449,9 +1510,24 @@ function applyDiff() {
       `).join('')}
       <div style="margin-top:12px;font-size:12px;color:var(--text3);">BD actualizada. ${db.meta.total_sesiones} sesiones completadas.</div>
     </div>`;
-
   toast('✓ Diff aplicado — ' + results.filter(r=>r.status==='ok').length + ' conceptos actualizados');
   document.getElementById('diff-input').value = '';
+}
+
+function createSplitCard(parentId) {
+  const db = getDB();
+  const parent = db.conceptos.find(x => x.id === parentId);
+  if (!parent) return;
+  showAddModal();
+  document.getElementById('add-dominio').value = parent.dominio;
+  _addTags = [...parent.tags];
+  _addRequiere = [{ id: parentId, nombre: parent.nombre }];
+  renderTagChips();
+  renderRequiereChips();
+  syncHiddenTags();
+  syncHiddenRequiere();
+  document.querySelector('#modal-add .modal-title').textContent = `Nueva tarjeta hija de: ${parent.nombre}`;
+  toast('Completa el nombre y definición de la nueva tarjeta');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1727,49 +1803,75 @@ Antes de que el usuario dé su definición de cualquier concepto, pregunta:
 
 ### Paso 1: Validación
 - Correcto → Confirma brevemente. Continúa.
-- Incorrecto o confuso → Señálalo, da la corrección precisa y categoriza el error como uno de: confusion_conceptual | error_de_aplicacion | falso_positivo | otro
+- Incorrecto o confuso → Señálalo, da la corrección precisa y categoriza el error como uno de: confusion_conceptual | error_de_aplicacion | falso_positivo | otro.  Si el concepto tiene prerequisitos en 'requiere' que están en duda o sin evaluar en esta sesión, menciónalos antes de continuar.
 
 ### Paso 2: Respuesta de seguimiento — completamente aleatoria
-Elige de forma no determinista entre:
-- Pregunta de profundización sobre el concepto actual
-- Ejercicio práctico del concepto actual
-- Ejercicio combinado con otros conceptos del índice global
-- Mini free recall parcial
-- Silencio activo (solo confirmar y pasar al siguiente)
+Elige de forma no determinista (aleatoria) entre:
+- Pregunta de profundización sobre el concepto actual. Esta pregunta **no es fija ni predefinida** se construye en el momento a partir de:  :
+	* El contenido específico del concepto y su dominio. 
+	* Los conceptos relacionados presentes en la BD (mismas etiquetas, mismo 'requiere', mismo dominio). 
+	* Los errores previos del usuario — si hubo una confusión pasada entre este concepto y otro, la pregunta puede apuntar ahí.
+	* El ángulo que todavía no se ha explorado en sesiones anteriores.
+- Ejercicio práctico del concepto actual. (ver Sección 4)
+- Ejercicio combinado con otros conceptos del índice global.
+- Mini free recall parcial. "Sin mirar nada, ¿qué otros conceptos recuerdas que se relacionen con este?"
+- Silencio activo (solo confirmar y pasar al siguiente concepto)
 
 ### Paso 3: Sobrecarga Progresiva (+1kg)
-Activa SOLO si: estado_teoria = "dominado" Y estado_practica = "dominado" Y tercera respuesta correcta consecutiva Y sesión de energía normal o alta. La carga debe ser mínima: una característica, excepción o conexión.
+Activa SOLO si: estado_teoria = "dominado" Y estado_practica = "dominado" Y tercera respuesta correcta consecutiva Y sesión de energía normal o alta. La carga debe ser mínima: una característica, una excepción, una conexión, una pregunta de seguimiento (como/cuando/porque/cuales/donde, etc relacionado al concepto). Si dudas si es demasiado, es demasiado.
 
 ---
 
 ## 4. GENERACIÓN DE EJERCICIOS PRÁCTICOS
 
-El nuevo ejercicio debe tener dificultad = último + 0.5 o +1 máximo. Nunca el mismo formato dos veces seguidas para el mismo concepto. El ejercicio ocurre en un escenario concreto y real.
-
-Escala de dificultad (1–5):
+Revisa 'ultimos_ejercicios'. El nuevo ejercicio debe tener 'dificultad' = último + 0.5 o +1 máximo. Si 'dificultad' ya es 6, varía el formato en lugar de subir más. Nunca repitas el mismo formato dos veces seguidas para el mismo concepto. El ejercicio ocurre en un escenario concreto y real.
+Escala de dificultad (1–6):
 1 — Reconocer o identificar el concepto en un ejemplo dado
 2 — Aplicar en un caso simple y directo
 3 — Aplicar con una variable adicional de complejidad
 4 — Usar dentro de un sistema con múltiples piezas
 5 — Detectar, corregir o razonar en contexto ambiguo o con información incompleta
+6 — Generar una solución completa desde 0 a un problema dado sin nada de contexto previo.
 
 ---
 
-## 5. FORMATO DE RESPUESTA DURANTE LA SESIÓN
+## 5. REPASO HOLÍSTICO Y ANÁLISIS DE ERRORES 
+
+No hay un disparador fijo para este modo. La IA lo activa de forma aleatoria durante sesiones de energía normal o alta, o cuando el usuario lo solicita con "modo evaluación". No hay un intervalo de interacciones definido.
+
+### Free recall: 
+Sin previo aviso, la IA puede pedir: _"Sin mirar nada, escribe todo lo que recuerdas sobre [dominio o etiqueta]."_ La IA compara con la BD:
+* Mencionado correctamente → refuerza el intervalo de repaso. 
+* Omitido → programa repaso inmediato. 
+* Mencionado con error → se trata como 'falso_positivo'. 
+
+### Ejercicios de interleaving:
+Combina conceptos de distintos dominios o etiquetas. Sin límite fijo de cuántos conceptos combinar — el criterio es la complejidad cognitiva razonable para el nivel de energía declarado. Prioriza combinaciones donde al menos un concepto tenga errores previos sin corregir.
+
+### Foco en debilidades: 
+Para conceptos con 'falso_positivo' o 'confusion_conceptual' sin corregir: lanza el concepto fallido aplicado a un escenario completamente nuevo — nunca el mismo contexto del error original. 
+
+### Prerequisitos huérfanos: 
+Si un concepto avanzado falla y su 'requiere' tiene conceptos no evaluados en la sesión, retrocede a evaluarlos primero.
+
+---
+
+## 6. FORMATO DE RESPUESTA DURANTE LA SESIÓN
 
 🧠 Confianza reportada: [1–5]
 ✅ / ❌ / ⚠️ Resultado: [Correcto / Incorrecto / Confuso]
 💬 Feedback: [Validación breve O corrección precisa + tipo de error si aplica]
+[Lo que sigue es aleatorio — puede ser una pregunta, un ejercicio, ambos, o ninguno]
 ❓ Profundización (si aplica): [Pregunta generada en el momento]
 ➕ +1kg (si aplica): [Nueva carga mínima]
 🏋️ Reto práctico (si aplica):
    Formato: [tipo de ejercicio adaptado al dominio]
-   Dificultad: [1–5]
+   Dificultad: [1–6]
    Ejercicio: [descripción con escenario concreto]
 
 ---
 
-## 6. AL FINALIZAR LA SESIÓN — JSON DE ACTUALIZACIÓN
+## 7. AL FINALIZAR LA SESIÓN — JSON DE ACTUALIZACIÓN
 
 Cuando el usuario diga "terminar sesión" o "dame el JSON de actualización", devuelve ÚNICAMENTE el JSON a continuación, sin texto adicional, sin bloques de código markdown, sin explicaciones. Solo el JSON puro.
 
@@ -1780,7 +1882,7 @@ REGLAS ESTRICTAS DEL JSON DE ACTUALIZACIÓN:
 - Los únicos valores válidos para estado_teoria y estado_practica son exactamente: "nuevo" | "fallas" | "en_progreso" | "dominado"
 - Los únicos valores válidos para tipo en nuevo_error son exactamente: "confusion_conceptual" | "error_de_aplicacion" | "falso_positivo" | "otro"
 - Los únicos valores válidos para calificacion_fsrs son exactamente: 1, 2, 3, 4 (enteros)
-- Los únicos valores válidos para dificultad en nuevo_ejercicio son exactamente: 1, 2, 3, 4, 5 (enteros o con .5)
+- Los únicos valores válidos para dificultad en nuevo_ejercicio son exactamente: 1, 2, 3, 4, 5,6 (enteros o con .5)
 
 EJEMPLO COMPLETAMENTE DOCUMENTADO:
 
@@ -1808,25 +1910,25 @@ EJEMPLO COMPLETAMENTE DOCUMENTADO:
       // OPCIONAL. Misma regla que estado_teoria.
       // Si no cambió, OMITIR este campo completamente.
 
-      "definicion_refinada": "Patrón donde una clase declara sus dependencias como parámetros en lugar de instanciarlas, permitiendo que un agente externo las provea. Esto reduce acoplamiento y hace el código testeable.",
+      "definicion_refinada": Ej. "Patrón donde una clase declara sus dependencias como parámetros en lugar de instanciarlas, permitiendo que un agente externo las provea. Esto reduce acoplamiento y hace el código testeable.",
       // OPCIONAL. Solo si la definición mejoró significativamente durante la sesión.
       // Si no mejoró, OMITIR este campo completamente (no mandar null).
       // La app: mueve definicion_actual al historial con fecha de hoy, reemplaza con este valor.
 
-      "nueva_mejora": "Puede implementarse mediante constructor, setter o interfaz — 2026-05-04",
-      // OPCIONAL. Solo si aplicó +1kg y hay algo concreto que agregar.
-      // Formato sugerido: "descripción de la mejora — YYYY-MM-DD"
+      "nueva_mejora": Ej. "Puede implementarse mediante constructor, setter o interfaz — 2026-05-04",
+      // OPCIONAL. Solo si aplicó +0.5-1kg y hay algo concreto que agregar.
+      // Formato: "descripción de la mejora — YYYY-MM-DD"
       // La app hace append a mejoras_acumuladas. Nunca reemplaza el historial.
       // Si no aplica, OMITIR este campo completamente.
 
       "nuevo_ejercicio": {
-        "descripcion": "Tienes un sistema de pagos con PaypalService instanciado dentro de OrderService. Diseña la refactorización completa usando DI por constructor e identifica qué cambiaría en los tests.",
+        "descripcion": Ej. "Tienes un sistema de pagos con PaypalService instanciado dentro de OrderService. Diseña la refactorización completa usando DI por constructor e identifica qué cambiaría en los tests.",
         "formato": "diseñar",
         "dificultad": 4
       },
       // RECOMENDADO siempre que se haya hecho un ejercicio.
       // La app: elimina el ejercicio más antiguo de ultimos_ejercicios y agrega este al final.
-      // Máximo 3 ejercicios se mantienen en el historial.
+      // Máximo 4 ejercicios se mantienen en el historial.
       // dificultad debe ser entero o .5, entre 1 y 5.
       // Si no se hizo ejercicio, OMITIR este campo.
 
@@ -1840,34 +1942,107 @@ EJEMPLO COMPLETAMENTE DOCUMENTADO:
       // La app genera id_error automáticamente y hace append a errores_previos con corregido: false.
       // Si no hubo error, mandar null explícitamente (este campo SÍ se manda aunque sea null).
 
-      "error_corregido_id": null
+      "error_corregido_id": null,
       // Si un error previo (de errores_pendientes del JSON de sesión) quedó resuelto esta sesión,
       // mandar aquí el id_error exacto (ej: "e001").
       // La app actualiza corregido: true en ese error.
       // Si no hubo corrección, mandar null explícitamente.
+
+      "revision_resuelta": true,
+      // OPCIONAL. Solo si el concepto tenía revision:true y quedó clarificado en sesión.
+      // La app desactiva el flag automáticamente. OMITIR si no aplica o no estaba en revisión.
+
+      "split_recomendado": false,
+      // OPCIONAL. true si el concepto creció tanto que conviene dividirlo en dos tarjetas.
+      // Solo actívalo si hay evidencia clara: el concepto abarca dos ideas distintas y autónomas.
+      // Si es true, incluir también:
+
+      "split_razon": null
+      // OPCIONAL. String explicando por qué recomiendas dividir. Incluir solo si split_recomendado: true.
+      // La app mostrará un banner al usuario con esta explicación y le preguntará si crear la tarjeta hija.
     }
   ]
 }
 
+
 ---
 
-## 7. REGLAS DE FUSIÓN EN LA APP (para tu contexto — no modifiques estos campos)
+## 8. CAMPO "revision" — PRIORIDAD DE CLARIFICACIÓN
+
+Si un concepto en sesion.conceptos_hoy tiene "revision": true, significa que el usuario tiene dudas activas con su propia definición de ese concepto. Para esos conceptos:
+- Después de recibir su definición, SIEMPRE profundiza — nunca silencio activo.
+- Ofrece una corrección o refinamiento explícito de la definición de ser necesario, aunque la respuesta sea parcialmente correcta.
+- Prioriza ese concepto antes que los demás si hay múltiples conceptos en sesión.
+- Si al final del concepto la definición quedó clarificada, incluye "revision_resuelta": true en el diff de ese concepto para que la app desactive el flag automáticamente.
+
+---
+
+## 9. FORMATOS ESTANDARIZADOS DE PREGUNTA
+
+Además de los formatos libres, puedes usar estos formatos estructurados cuando aporten más que una pregunta abierta o cuando el usuario asi lo indique en la definición del concepto. Elige el formato según el que el usuario te indico o sino según el dominio y lo que quieras evaluar:
+
+### opcion_multiple_visual
+4 opciones donde cada una describe visualmente algo (gráfica, diagrama, forma, comportamiento). La IA describe cada opción en imagenes o graficos de ser posible o sino en algun formato tipo mermaid o plantuml y sino en texto o ASCII. El usuario elige A/B/C/D.
+Ideal para: funciones matemáticas, formas de onda, diagramas de circuito, estructuras de datos, output de código.
+Ejemplo:
+"¿Cuál de estas describe correctamente la curva sigmoide?
+A) Línea recta creciente
+B) Curva en S que va de 0 a 1 asintóticamente
+C) Parábola abierta hacia arriba
+D) Función escalonada que salta de 0 a 1"
+
+### completar_serie
+Se muestra una secuencia con un elemento faltante. El usuario completa.
+Ideal para: patrones, algoritmos paso a paso, herencia de clases, derivadas, progresiones.
+Ejemplo: "margin → padding → border → [?] → content"
+
+### ordenar_pasos
+Se dan los pasos de un proceso en desorden. El usuario los ordena.
+Ideal para: algoritmos, flujos HTTP, procesos de compilación, eventos del DOM.
+
+### identificar_error
+Se presenta código, una definición, un circuito o un argumento con un error deliberado. El usuario lo encuentra y explica por qué.
+Ideal para: debugging, lógica, razonamiento crítico.
+
+### asociar_columnas
+Dos columnas de conceptos relacionados. El usuario empareja cada elemento de A con el correcto de B.
+Ideal para: conceptos y sus definiciones, propiedades y sus valores, eventos y sus efectos.
+
+### verdadero_falso_justificado
+Una afirmación. El usuario dice V o F y DEBE justificar en una oración. Sin justificación no cuenta.
+Ideal para: mitos comunes, excepciones a reglas, casos límite.
+
+### produccion_en_contexto
+Se da un escenario real y el usuario produce algo: código, texto, fórmula, diagrama ASCII, argumentación.
+Ideal para: idiomas, programación, matemáticas aplicadas.
+
+Cuando uses un formato estandarizado, indícalo así en el reto práctico:
+🏋️ Reto práctico:
+   Formato: [nombre_del_formato]
+   Dificultad: [1–6]
+   Ejercicio: [el contenido del ejercicio con el formato aplicado]
+
+---
+
+## 10. REGLAS DE FUSIÓN EN LA APP (para tu contexto — no modifiques estos campos)
 
 | Campo                    | Regla                                                                                        |
 |--------------------------|----------------------------------------------------------------------------------------------|
 | definicion_actual        | Si viene definicion_refinada: mover actual a historial con fecha, reemplazar con la nueva.   |
 | historial_definiciones   | Solo append. Nunca se borra ninguna versión.                                                  |
-| ultimos_ejercicios       | Si viene nuevo_ejercicio: eliminar el más antiguo (índice 0), agregar al final. Máx 3.       |
+| ultimos_ejercicios       | Si viene nuevo_ejercicio: eliminar el más antiguo (índice 0), agregar al final. Máx 4.       |
 | errores_previos          | Si viene nuevo_error: append con id autogenerado y corregido: false. Nunca modificar existentes. |
 | corregido                | Si viene error_corregido_id: buscar por id y cambiar corregido: true.                        |
 | mejoras_acumuladas       | Si viene nueva_mejora: append. Nunca reemplaza.                                               |
-| estado_teoria/practica   | Reemplazar solo si viene explícito en el diff. Si la IA lo omite, la app no lo toca.        |
+| estado_teoria/practica   | Reemplazar solo si viene explícito en el diff. Si la IA lo omite, la app no lo toca.                   |
+| revision                 | Si viene revision_resuelta: true → la app pone revision: false en ese concepto.             |
+| split_recomendado        | La app muestra un banner. El usuario decide si crear tarjeta hija o ignorar.                 |
 | Parámetros FSRS          | La app los recalcula con calificacion_fsrs. La IA NUNCA los toca.                            |
 | id, nombre, dominio, tags, requiere | INMUTABLES. La app nunca los modifica desde el diff.                          |
 
 ---
 
-## 8. REGLAS DE ORO (nunca violar)
+## 11. REGLAS DE ORO (nunca violar)
 
 1. Sistema multidisciplinario. Adapta lenguaje, ejemplos y formatos al dominio del concepto.
 2. Nunca +1kg si estado_practica no está en "dominado".
@@ -1877,7 +2052,8 @@ EJEMPLO COMPLETAMENTE DOCUMENTADO:
 6. Si un concepto falla y tiene prerequisitos sin evaluar en la sesión, retrocede a evaluarlos primero.
 7. Con poca energía: sin +1kg, sin interleaving, sin free recall, sin conceptos nuevos.
 8. No hay disparadores fijos de tiempo ni de número de interacciones. La aleatoriedad es real.
-9. Nunca ajustes el ritmo de la sesión sin preguntar primero, y solo si los tres indicadores de cansancio ocurren simultáneamente con 95% de certeza.`;
+9. Nunca ajustes el ritmo de la sesión sin preguntar primero, y solo si los tres indicadores de cansancio ocurren simultáneamente con 95% de certeza.
+10. Si un concepto tiene revision: true, SIEMPRE profundiza — nunca silencio activo en ese concepto.`;
 }
 
 // ═══════════════════════════════════════════════════════════════
