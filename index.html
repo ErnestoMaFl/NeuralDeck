@@ -6,6 +6,10 @@
 <title>NeuralDeck — Sistema de Aprendizaje Activo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -34,15 +38,12 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow-x: hidden; }
-
   /* SCROLLBAR */
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
   /* LAYOUT */
   #app { display: flex; flex-direction: column; min-height: 100vh; }
-
   /* NAV */
   nav {
     display: flex; align-items: center; justify-content: space-between;
@@ -61,14 +62,11 @@
   .nav-tab:hover { color: var(--text); background: var(--surface2); }
   .nav-tab.active { color: var(--accent2); background: var(--accent-dim); }
   .nav-status { font-family: var(--mono); font-size: 11px; color: var(--text3); }
-
   /* MAIN */
   main { flex: 1; padding: 28px 24px; max-width: 960px; width: 100%; margin: 0 auto; }
-
   /* SECTION */
   .section { display: none; }
   .section.active { display: block; }
-
   /* CARDS */
   .card {
     background: var(--surface); border: 1px solid var(--border);
@@ -78,17 +76,14 @@
   .card:hover { border-color: var(--border2); }
   .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
   .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; }
-
   /* GRID */
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
   @media (max-width: 600px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
-
   /* STAT BOX */
   .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius2); padding: 16px 20px; }
   .stat-value { font-family: var(--mono); font-size: 32px; font-weight: 600; color: var(--text); line-height: 1; }
   .stat-label { font-size: 12px; color: var(--text3); margin-top: 6px; }
-
   /* BUTTONS */
   .btn {
     display: inline-flex; align-items: center; gap: 8px;
@@ -108,7 +103,6 @@
   .btn-sm { padding: 5px 10px; font-size: 12px; }
   .btn-lg { padding: 12px 24px; font-size: 14px; }
   .btn-full { width: 100%; justify-content: center; }
-
   /* TAGS */
   .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; font-family: var(--mono); }
   .tag-purple { background: var(--accent-dim); color: var(--accent2); border: 1px solid rgba(124,106,247,0.2); }
@@ -116,7 +110,6 @@
   .tag-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(250,204,21,0.2); }
   .tag-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
   .tag-gray { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
-
   /* INPUTS */
   .input-group { margin-bottom: 14px; }
   .input-label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
@@ -129,12 +122,10 @@
   .textarea { min-height: 80px; resize: vertical; }
   select.input { cursor: pointer; }
   .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
   /* BADGES */
   .badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; font-weight: 700; font-family: var(--mono); }
   .badge-accent { background: var(--accent); color: #fff; }
   .badge-green { background: var(--green); color: #000; }
-
   /* CONCEPT LIST */
   .concept-item {
     display: flex; align-items: center; gap: 12px; padding: 12px 14px;
@@ -151,14 +142,12 @@
   .concept-domain { font-size: 11px; color: var(--text3); font-family: var(--mono); }
   .concept-states { display: flex; gap: 4px; align-items: center; }
   .concept-due { font-family: var(--mono); font-size: 11px; color: var(--text3); white-space: nowrap; }
-
   /* STATE PILL */
   .state-pill { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 600; font-family: var(--mono); }
   .state-nuevo { background: var(--surface3); color: var(--text3); }
   .state-fallas { background: var(--red-dim); color: var(--red); }
   .state-en_progreso { background: var(--yellow-dim); color: var(--yellow); }
   .state-dominado { background: var(--green-dim); color: var(--green); }
-
   /* CODE BLOCK */
   .code-block {
     background: var(--surface2); border: 1px solid var(--border);
@@ -166,7 +155,6 @@
     font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--text2);
     overflow-x: auto; white-space: pre; max-height: 320px; overflow-y: auto;
   }
-
   /* MODAL */
   .modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
@@ -183,7 +171,6 @@
   .modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
   .modal-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 20px; line-height: 1; padding: 4px; }
   .modal-close:hover { color: var(--text); }
-
   /* TOAST */
   #toast {
     position: fixed; bottom: 24px; right: 24px; z-index: 999;
@@ -193,24 +180,19 @@
     animation: fadeUp 0.2s ease; max-width: 320px;
   }
   @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
-
   /* DIVIDER */
   .divider { height: 1px; background: var(--border); margin: 20px 0; }
-
   /* SECTION HEADER */
   .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .section-title { font-size: 20px; font-weight: 700; color: var(--text); }
   .section-sub { font-size: 13px; color: var(--text3); margin-top: 3px; }
-
   /* PROGRESS BAR */
   .progress-bar { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; margin-top: 8px; }
   .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
-
   /* STEP INDICATOR */
   .steps { display: flex; gap: 6px; margin-bottom: 20px; }
   .step { flex: 1; height: 3px; border-radius: 2px; background: var(--surface3); transition: background 0.3s; }
   .step.done { background: var(--accent); }
-
   /* GIST CONFIG */
   .gist-status { display: flex; align-items: center; gap: 8px; font-size: 13px; }
   .dot { width: 7px; height: 7px; border-radius: 50%; }
@@ -218,51 +200,41 @@
   .dot-red { background: var(--red); }
   .dot-yellow { background: var(--yellow); animation: pulse 1.5s infinite; }
   @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
-
   /* EMPTY STATE */
   .empty { text-align: center; padding: 48px 20px; color: var(--text3); }
   .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
   .empty-title { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
   .empty-sub { font-size: 13px; }
-
   /* CONCEPT DETAIL */
   .detail-grid { display: grid; gap: 14px; }
   .detail-section { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
   .detail-section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-
   /* SEARCH */
   .search-wrap { position: relative; margin-bottom: 16px; }
   .search-wrap .input { padding-left: 36px; }
   .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; }
-
   /* FILTER BAR */
   .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
   .filter-btn { padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); transition: all 0.15s; font-family: var(--sans); }
   .filter-btn:hover, .filter-btn.active { background: var(--accent-dim); border-color: rgba(124,106,247,0.4); color: var(--accent2); }
-
   /* TABS inside section */
   .inner-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: var(--surface2); padding: 3px; border-radius: var(--radius); width: fit-content; }
   .inner-tab { padding: 6px 14px; border-radius: 5px; font-size: 13px; cursor: pointer; color: var(--text2); transition: all 0.15s; border: none; background: transparent; font-family: var(--sans); }
   .inner-tab.active { background: var(--surface); color: var(--text); font-weight: 600; }
-
   /* GIST TOKEN INPUT */
   .token-wrap { position: relative; }
   .token-wrap .input { padding-right: 80px; font-family: var(--mono); font-size: 12px; }
   .token-show { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--text3); cursor: pointer; font-family: var(--sans); }
-
   /* COPY AREA */
   .copy-area { position: relative; }
   .copy-btn-overlay { position: absolute; top: 8px; right: 8px; }
-
   /* HIGHLIGHT */
   .hl-accent { color: var(--accent2); }
   .hl-green { color: var(--green); }
   .hl-yellow { color: var(--yellow); }
   .hl-red { color: var(--red); }
-
   /* SEPARATOR */
   .sep { margin: 0 6px; color: var(--text3); }
-
   /* FLEX UTILS */
   .flex { display: flex; }
   .flex-col { display: flex; flex-direction: column; }
@@ -284,7 +256,6 @@
   .text-muted { color: var(--text2); }
   .text-dim { color: var(--text3); }
   .fw-600 { font-weight: 600; }
-
   /* AUTOCOMPLETE */
   .ac-wrap { position: relative; }
   .ac-dropdown {
@@ -302,7 +273,6 @@
   }
   .ac-item:hover, .ac-item.selected { background: var(--accent-dim); color: var(--text); }
   .ac-item-tag { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: auto; }
-
   /* TAG CHIPS in add modal */
   .tag-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; min-height: 0; }
   .tag-chip {
@@ -313,7 +283,6 @@
   }
   .tag-chip-remove { cursor: pointer; opacity: 0.6; font-size: 13px; line-height: 1; }
   .tag-chip-remove:hover { opacity: 1; }
-
   /* REVISION TOGGLE */
   .revision-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -323,7 +292,6 @@
   .revision-off { background: var(--surface2); color: var(--text3); border-color: var(--border); }
   .revision-off:hover { border-color: var(--yellow); color: var(--yellow); }
   .revision-on { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(250,204,21,0.4); box-shadow: 0 0 6px rgba(250,204,21,0.2); }
-
   /* SPLIT BANNER */
   .split-banner {
     background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.35);
@@ -332,7 +300,6 @@
   .split-banner-title { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 6px; }
   .split-banner-body { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 12px; }
   .split-banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
   /* FSRS RATING BUTTONS */
   .rating-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .rating-btn {
@@ -348,6 +315,39 @@
   .rating-4 { background: var(--green-dim); border-color: rgba(74,222,128,0.3); color: var(--green); }
   .rating-4:hover { background: rgba(74,222,128,0.25); }
   .rating-label { font-size: 10px; margin-top: 3px; opacity: 0.7; }
+
+  /* ── LATEX RENDERING ── */
+  /* Contenedor de texto con LaTeX ya renderizado */
+  .latex-content {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text2);
+    word-break: break-word;
+  }
+  .latex-content .katex { color: var(--accent2); }
+  .latex-content .katex-display { margin: 8px 0; }
+  /* Hint visual en los textareas que aceptan LaTeX */
+  .latex-hint {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; color: var(--text3); font-family: var(--mono);
+    margin-top: 4px;
+  }
+  .latex-hint-icon { color: var(--accent2); font-style: italic; font-family: Georgia, serif; }
+  /* Preview live de LaTeX bajo el textarea */
+  .latex-preview-wrap { margin-top: 6px; }
+  .latex-preview-label {
+    font-size: 10px; font-weight: 600; color: var(--text3); font-family: var(--mono);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+  }
+  .latex-preview-box {
+    background: var(--surface3); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px;
+    font-size: 13px; line-height: 1.7; color: var(--text2);
+    min-height: 36px; word-break: break-word;
+  }
+  .latex-preview-box .katex { color: var(--accent2); }
+  .latex-preview-box .katex-display { margin: 6px 0; }
+  .latex-preview-empty { color: var(--text3); font-size: 12px; font-style: italic; }
 </style>
 </head>
 <body>
@@ -374,7 +374,6 @@
     </div>
   </nav>
   <main>
-
     <!-- ═══════════════ DASHBOARD ═══════════════ -->
     <div id="sec-dashboard" class="section active">
       <div class="section-header">
@@ -384,13 +383,11 @@
         </div>
         <button class="btn btn-primary" onclick="goto('session')">▶ Iniciar Sesión</button>
       </div>
-
       <div class="grid3 mb-16" id="stats-row">
         <div class="stat-box"><div class="stat-value hl-accent" id="stat-due">0</div><div class="stat-label">Para revisar hoy</div></div>
         <div class="stat-box"><div class="stat-value hl-green" id="stat-total">0</div><div class="stat-label">Conceptos totales</div></div>
         <div class="stat-box"><div class="stat-value" id="stat-sessions">0</div><div class="stat-label">Sesiones completadas</div></div>
       </div>
-
       <div class="card mb-16">
         <div class="card-header">
           <div class="card-title">Conceptos pendientes hoy</div>
@@ -398,7 +395,6 @@
         </div>
         <div id="due-list"></div>
       </div>
-
       <div class="grid2">
         <div class="card">
           <div class="card-header"><div class="card-title">Distribución de estados</div></div>
@@ -410,7 +406,6 @@
         </div>
       </div>
     </div>
-
     <!-- ═══════════════ CONCEPTS ═══════════════ -->
     <div id="sec-concepts" class="section">
       <div class="section-header">
@@ -430,23 +425,19 @@
       <div class="filter-bar" id="domain-filters"></div>
       <div id="concept-list"></div>
     </div>
-
     <!-- ═══════════════ SESSION ═══════════════ -->
     <div id="sec-session" class="section">
       <div class="section-header">
         <div class="section-title">Preparar Sesión</div>
       </div>
-
       <div class="inner-tabs">
         <button class="inner-tab active" onclick="sessionTab('prepare')">1 · Preparar</button>
         <button class="inner-tab" onclick="sessionTab('apply')">2 · Aplicar Diff</button>
       </div>
-
       <div id="session-prepare">
         <div class="card mb-16">
           <div class="card-header"><div class="card-title">Conceptos en esta sesión</div><span class="tag tag-purple" id="session-count-tag">0 conceptos</span></div>
           <div id="session-concept-list" style="margin-bottom:14px;"></div>
-
           <div class="input-group">
             <label class="input-label">Nivel de energía (opcional — lo pregunta la IA)</label>
             <select class="input" id="energy-select">
@@ -456,7 +447,6 @@
               <option value="alto">Alto / Sesión intensa</option>
             </select>
           </div>
-
           <div class="card-header" style="margin-bottom:8px;margin-top:4px;">
             <div class="card-title">Paquete de sesión generado</div>
             <button class="btn btn-sm btn-green" onclick="copySessionPackage()">📋 Copiar al portapapeles</button>
@@ -469,7 +459,6 @@
           </div>
         </div>
       </div>
-
       <div id="session-apply" style="display:none;">
         <div class="card mb-16">
           <div class="card-header"><div class="card-title">Pegar diff de la IA</div></div>
@@ -482,19 +471,16 @@
         <div id="diff-result"></div>
       </div>
     </div>
-
     <!-- ═══════════════ CONFIG ═══════════════ -->
     <div id="sec-config" class="section">
       <div class="section-header">
         <div class="section-title">Configuración</div>
       </div>
-
       <div class="inner-tabs">
         <button class="inner-tab active" onclick="configTab('gist')">GitHub Gist</button>
         <button class="inner-tab" onclick="configTab('data')">Datos</button>
         <button class="inner-tab" onclick="configTab('prompt')">Prompt Tutor</button>
       </div>
-
       <div id="config-gist">
         <div class="card mb-16">
           <div class="card-header">
@@ -530,7 +516,6 @@
           </div>
         </div>
       </div>
-
       <div id="config-data" style="display:none;">
         <div class="card mb-16">
           <div class="card-header"><div class="card-title">Importar / Exportar JSON</div></div>
@@ -550,7 +535,6 @@
           <button class="btn btn-danger" onclick="resetDB()">🗑 Reiniciar base de datos</button>
         </div>
       </div>
-
       <div id="config-prompt" style="display:none;">
         <div class="card">
           <div class="card-header"><div class="card-title">Prompt del Tutor IA</div><button class="btn btn-sm btn-green" onclick="copyTutorPrompt()">📋 Copiar prompt</button></div>
@@ -559,10 +543,8 @@
         </div>
       </div>
     </div>
-
   </main>
 </div>
-
 <!-- MODAL: Concepto detalle / edición -->
 <div class="modal-overlay" id="modal-concept">
   <div class="modal">
@@ -573,7 +555,6 @@
     <div id="modal-concept-body"></div>
   </div>
 </div>
-
 <!-- MODAL: Agregar concepto -->
 <div class="modal-overlay" id="modal-add">
   <div class="modal">
@@ -593,7 +574,16 @@
           </div>
         </div>
       </div>
-      <div class="input-group"><label class="input-label">Definición actual *</label><textarea class="input textarea" id="add-definicion" rows="3"></textarea></div>
+      <div class="input-group">
+        <label class="input-label">Definición actual *</label>
+        <textarea class="input textarea" id="add-definicion" rows="3"
+          oninput="updateLatexPreview('add-definicion','preview-definicion')"></textarea>
+        <div class="latex-hint"><span class="latex-hint-icon">∑</span> Soporta LaTeX: <code style="font-size:10px;color:var(--accent2);">$inline$</code> y <code style="font-size:10px;color:var(--accent2);">$$bloque$$</code></div>
+        <div class="latex-preview-wrap">
+          <div class="latex-preview-label">Preview</div>
+          <div class="latex-preview-box latex-preview-empty" id="preview-definicion">Escribe para ver el preview…</div>
+        </div>
+      </div>
       <div class="input-row">
         <div class="input-group">
           <label class="input-label">Tags</label>
@@ -630,7 +620,6 @@
     </div>
   </div>
 </div>
-
 <!-- MODAL: Plantilla JSON -->
 <div class="modal-overlay" id="modal-template">
   <div class="modal" style="max-width:640px;">
@@ -645,25 +634,103 @@
     </div>
   </div>
 </div>
-
 <div id="toast"></div>
-
 <script>
+// ═══════════════════════════════════════════════════════════════
+// LATEX RENDERING UTILITIES
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Waits for KaTeX to be available, then resolves.
+ * KaTeX is loaded with defer, so it may not be ready synchronously.
+ */
+function katexReady() {
+  return new Promise(resolve => {
+    if (typeof katex !== 'undefined' && typeof renderMathInElement !== 'undefined') {
+      resolve();
+      return;
+    }
+    const check = setInterval(() => {
+      if (typeof katex !== 'undefined' && typeof renderMathInElement !== 'undefined') {
+        clearInterval(check);
+        resolve();
+      }
+    }, 50);
+  });
+}
+
+function renderLatexInElement(el) {
+  if (!el) return;
+  katexReady().then(() => {
+    try {
+      renderMathInElement(el, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$',  right: '$',  display: false }
+        ],
+        throwOnError: false,
+        errorColor: 'var(--red)',
+        strict: false
+      });
+    } catch (e) {
+      // Silently ignore — element already has plain text fallback
+    }
+  });
+}
+
+function latexHtml(text, cssClass = 'latex-content', id = '') {
+  if (!text) return `<span class="${cssClass}"></span>`;
+  // Escape HTML entities but preserve $ delimiters for KaTeX
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+  const idAttr = id ? ` id="${id}"` : '';
+  return `<span class="${cssClass}" data-latex-pending="1"${idAttr}>${escaped}</span>`;
+}
+
+function processLatexInContainer(container) {
+  if (!container) return;
+  const pending = container.querySelectorAll('[data-latex-pending]');
+  pending.forEach(el => {
+    el.removeAttribute('data-latex-pending');
+    renderLatexInElement(el);
+  });
+}
+
+function updateLatexPreview(textareaId, previewId) {
+  const ta = document.getElementById(textareaId);
+  const preview = document.getElementById(previewId);
+  if (!ta || !preview) return;
+  const val = ta.value.trim();
+  if (!val) {
+    preview.className = 'latex-preview-box latex-preview-empty';
+    preview.textContent = 'Escribe para ver el preview…';
+    return;
+  }
+  preview.className = 'latex-preview-box';
+  // Escape HTML, let KaTeX handle the math
+  const escaped = val
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  preview.innerHTML = escaped;
+  renderLatexInElement(preview);
+}
+
 // ═══════════════════════════════════════════════════════════════
 // CORE STATE
 // ═══════════════════════════════════════════════════════════════
 const STORAGE_KEY = 'neuraldeck_db';
 const GIST_CONFIG_KEY = 'neuraldeck_gist';
-
 const DEFAULT_DB = {
   meta: { version: "1.0", ultima_actualizacion: today(), total_sesiones: 0 },
   conceptos: []
 };
-
 function today() {
   return new Date().toISOString().slice(0,10);
 }
-
 // ── Sanitize a raw DB object: assign missing IDs, fill FSRS defaults, ensure arrays ──
 function sanitizeDB(db) {
   if (!db || !Array.isArray(db.conceptos)) return db;
@@ -708,26 +775,21 @@ function sanitizeDB(db) {
   });
   return db;
 }
-
 function getDB() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const db = raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(DEFAULT_DB));
-    // Always sanitize on load — catches anything stored before the fix
     return sanitizeDB(db);
   }
   catch { return JSON.parse(JSON.stringify(DEFAULT_DB)); }
 }
-
 function saveDB(db) {
   db.meta.ultima_actualizacion = today();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
 }
-
 function getGistConfig() {
   try { return JSON.parse(localStorage.getItem(GIST_CONFIG_KEY)) || {}; } catch { return {}; }
 }
-
 // ═══════════════════════════════════════════════════════════════
 // AUTOCOMPLETE — dominios, tags, requiere
 // ═══════════════════════════════════════════════════════════════
@@ -735,16 +797,12 @@ function getKnownDomains() {
   const db = getDB();
   return [...new Set(db.conceptos.map(c => c.dominio).filter(Boolean))].sort();
 }
-
 function getKnownTags() {
   const db = getDB();
   return [...new Set(db.conceptos.flatMap(c => c.tags || []).filter(Boolean))].sort();
 }
-
-// Current tag/requiere chip state for the add modal
 let _addTags = [];
-let _addRequiere = []; // array of {id, nombre}
-
+let _addRequiere = [];
 function acDominio(inp) {
   const q = inp.value.toLowerCase().trim();
   const known = getKnownDomains();
@@ -754,15 +812,12 @@ function acDominio(inp) {
   dd.innerHTML = matches.map(d => `<div class="ac-item" onmousedown="pickDominio('${d}')">${d}</div>`).join('');
   dd.classList.add('open');
 }
-
 function pickDominio(val) {
   document.getElementById('add-dominio').value = val;
   document.getElementById('ac-dominio').classList.remove('open');
 }
-
 function acTag(inp) {
   const raw = inp.value;
-  // Only autocomplete the last segment after a comma
   const parts = raw.split(',');
   const q = parts[parts.length - 1].trim().toLowerCase();
   const known = getKnownTags();
@@ -773,13 +828,11 @@ function acTag(inp) {
   dd.innerHTML = matches.map(t => `<div class="ac-item" onmousedown="pickTag('${t}')">${t}</div>`).join('');
   dd.classList.add('open');
 }
-
 function pickTag(val) {
   addTagChip(val);
   document.getElementById('add-tags-input').value = '';
   document.getElementById('ac-tags').classList.remove('open');
 }
-
 function tagKeydown(e) {
   if (e.key === 'Enter' || e.key === ',') {
     e.preventDefault();
@@ -791,7 +844,6 @@ function tagKeydown(e) {
     renderTagChips();
   }
 }
-
 function addTagChip(val) {
   val = val.trim();
   if (!val || _addTags.includes(val)) return;
@@ -799,24 +851,19 @@ function addTagChip(val) {
   renderTagChips();
   syncHiddenTags();
 }
-
 function removeTagChip(idx) {
   _addTags.splice(idx, 1);
   renderTagChips();
   syncHiddenTags();
 }
-
 function renderTagChips() {
   document.getElementById('tags-chips').innerHTML = _addTags.map((t,i) =>
     `<span class="tag-chip">${t}<span class="tag-chip-remove" onclick="removeTagChip(${i})">×</span></span>`
   ).join('');
 }
-
 function syncHiddenTags() {
   document.getElementById('add-tags').value = _addTags.join(',');
 }
-
-// Requiere autocomplete (by concept name or id)
 function acRequiere(inp) {
   const q = inp.value.trim().toLowerCase();
   const db = getDB();
@@ -834,13 +881,11 @@ function acRequiere(inp) {
   ).join('');
   dd.classList.add('open');
 }
-
 function pickRequiere(id, nombre) {
   addRequiereChip(id, nombre);
   document.getElementById('add-requiere-input').value = '';
   document.getElementById('ac-requiere').classList.remove('open');
 }
-
 function requiereKeydown(e) {
   if (e.key === 'Backspace' && !e.target.value) {
     _addRequiere.pop();
@@ -848,36 +893,28 @@ function requiereKeydown(e) {
     syncHiddenRequiere();
   }
 }
-
 function addRequiereChip(id, nombre) {
   if (_addRequiere.find(r => r.id === id)) return;
   _addRequiere.push({id, nombre});
   renderRequiereChips();
   syncHiddenRequiere();
 }
-
 function removeRequiereChip(idx) {
   _addRequiere.splice(idx, 1);
   renderRequiereChips();
   syncHiddenRequiere();
 }
-
 function renderRequiereChips() {
   document.getElementById('requiere-chips').innerHTML = _addRequiere.map((r,i) =>
     `<span class="tag-chip" style="background:rgba(74,222,128,0.1);color:var(--green);border-color:rgba(74,222,128,0.2);">${r.nombre}<span class="ac-item-tag" style="color:var(--text3);margin-left:4px;">${r.id}</span><span class="tag-chip-remove" onclick="removeRequiereChip(${i})">×</span></span>`
   ).join('');
 }
-
 function syncHiddenRequiere() {
   document.getElementById('add-requiere').value = _addRequiere.map(r => r.id).join(',');
 }
-
 function acBlur(ddId) {
-  // Slight delay so mousedown on item fires first
   setTimeout(() => { const dd = document.getElementById(ddId); if(dd) dd.classList.remove('open'); }, 150);
 }
-
-// Reset chip state when opening the add modal
 function resetChipState() {
   _addTags = [];
   _addRequiere = [];
@@ -888,8 +925,6 @@ function resetChipState() {
   document.getElementById('add-tags-input').value = '';
   document.getElementById('add-requiere-input').value = '';
 }
-
-// Load chips from existing concept (for edit)
 function loadChipsFromConcept(c) {
   _addTags = [...(c.tags || [])];
   _addRequiere = (c.requiere || []).map(id => {
@@ -904,51 +939,39 @@ function loadChipsFromConcept(c) {
   document.getElementById('add-tags-input').value = '';
   document.getElementById('add-requiere-input').value = '';
 }
-
 // ═══════════════════════════════════════════════════════════════
 // FSRS IMPLEMENTATION (simplified FSRS-4.5)
 // ═══════════════════════════════════════════════════════════════
 const FSRS_W = [0.4072,1.1829,3.1262,15.4722,7.2102,0.5316,1.0651,0.0589,1.5330,0.1544,1.0070,1.9395,0.1100,0.2900,2.2700,0.2500,2.9898,0.5100,0.3567];
-
 function fsrsInitialStability(rating) {
   return Math.max(FSRS_W[rating - 1] ?? 1, 0.1);
 }
-
 function fsrsInitialDifficulty(rating) {
   return Math.min(Math.max(FSRS_W[4] - Math.exp(FSRS_W[5] * (rating - 1)) + 1, 1), 10);
 }
-
 function fsrsRetrievability(stability, days) {
   return Math.pow(1 + days / (9 * stability), -1);
 }
-
 function fsrsNextInterval(stability, desiredRetention = 0.9) {
   const interval = Math.round(9 * stability * (Math.pow(desiredRetention, -1) - 1));
   return Math.max(1, interval);
 }
-
 function fsrsNextStability(d, s, r, rating) {
   if (rating >= 3) {
-    // Recall
     return s * (Math.exp(FSRS_W[8]) * (11 - d) * Math.pow(s, -FSRS_W[9]) * (Math.exp((1 - r) * FSRS_W[10]) - 1) * (rating === 4 ? FSRS_W[15] : 1) * (rating === 2 ? FSRS_W[16] : 1) + 1);
   } else {
-    // Forget
     return FSRS_W[11] * Math.pow(d, -FSRS_W[12]) * (Math.pow(s + 1, FSRS_W[13]) - 1) * Math.exp((1 - r) * FSRS_W[14]);
   }
 }
-
 function fsrsNextDifficulty(d, rating) {
   const delta = FSRS_W[6] * (rating - 3);
   const d_new = d - delta;
-  // Mean reversion
   return Math.min(Math.max(d_new + FSRS_W[7] * (FSRS_W[4] - d_new), 1), 10);
 }
-
 function applyFSRSRating(concept, rating) {
   const fsrs = concept.fsrs;
   const today_str = today();
   const daysSinceReview = fsrs.last_review ? Math.max(1, Math.round((new Date(today_str) - new Date(fsrs.last_review)) / 86400000)) : 1;
-
   if (fsrs.state === 'new') {
     fsrs.stability = fsrsInitialStability(rating);
     fsrs.difficulty = fsrsInitialDifficulty(rating);
@@ -962,25 +985,21 @@ function applyFSRSRating(concept, rating) {
     if (rating < 3) fsrs.lapses = (fsrs.lapses || 0) + 1;
     fsrs.state = rating >= 3 ? 'review' : 'relearn';
   }
-
   const interval = fsrsNextInterval(fsrs.stability);
   const dueDate = new Date(today_str);
   dueDate.setDate(dueDate.getDate() + interval);
   fsrs.due = dueDate.toISOString().slice(0,10);
   fsrs.last_review = today_str;
 }
-
 function isDue(concept) {
   if (!concept.fsrs.due) return true;
   return concept.fsrs.due <= today();
 }
-
 function getDueIn(concept) {
   if (!concept.fsrs.due) return 0;
   const diff = Math.round((new Date(concept.fsrs.due) - new Date(today())) / 86400000);
   return diff;
 }
-
 // ═══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════════
@@ -991,19 +1010,16 @@ function goto(section) {
   const tabs = ['dashboard','concepts','session','config'];
   const idx = tabs.indexOf(section);
   if (idx >= 0) document.querySelectorAll('.nav-tab')[idx].classList.add('active');
-
   if (section === 'dashboard') renderDashboard();
   if (section === 'concepts') renderConceptList();
   if (section === 'session') renderSession();
   if (section === 'config') renderConfig();
 }
-
 function sessionTab(tab) {
   document.getElementById('session-prepare').style.display = tab === 'prepare' ? '' : 'none';
   document.getElementById('session-apply').style.display = tab === 'apply' ? '' : 'none';
   document.querySelectorAll('.inner-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='prepare')||(i===1&&tab==='apply')));
 }
-
 function configTab(tab) {
   ['gist','data','prompt'].forEach(t => { document.getElementById('config-'+t).style.display = t===tab?'':'none'; });
   document.querySelectorAll('#sec-config .inner-tab').forEach((t,i) => {
@@ -1013,7 +1029,6 @@ function configTab(tab) {
   if (tab === 'data') renderRawJSON();
   if (tab === 'prompt') renderTutorPrompt();
 }
-
 // ═══════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═══════════════════════════════════════════════════════════════
@@ -1021,7 +1036,6 @@ function renderDashboard() {
   const db = getDB();
   const due = db.conceptos.filter(c => isDue(c));
   const total = db.conceptos.length;
-
   document.getElementById('stat-due').textContent = due.length;
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-sessions').textContent = db.meta.total_sesiones || 0;
@@ -1029,16 +1043,12 @@ function renderDashboard() {
   const pendingBadge = document.getElementById('nav-pending-badge');
   if (pendingBadge) pendingBadge.textContent = due.length;
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('es-MX', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
-  // Due list
   const dueList = document.getElementById('due-list');
   if (due.length === 0) {
     dueList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">🎉 Sin conceptos pendientes hoy</div>';
   } else {
     dueList.innerHTML = due.slice(0,6).map(c => conceptItem(c, true)).join('');
   }
-
-  // State distribution
   const states = ['nuevo','fallas','en_progreso','dominado'];
   const statLabels = {nuevo:'Nuevo',fallas:'Con fallas',en_progreso:'En progreso',dominado:'Dominado'};
   const statColors = {nuevo:'var(--text3)',fallas:'var(--red)',en_progreso:'var(--yellow)',dominado:'var(--green)'};
@@ -1054,8 +1064,6 @@ function renderDashboard() {
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${statColors[st]}"></div></div>
     </div>`;
   }).join('');
-
-  // Upcoming
   const upcoming = db.conceptos.filter(c => !isDue(c)).sort((a,b) => (a.fsrs.due||'').localeCompare(b.fsrs.due||'')).slice(0,5);
   const upEl = document.getElementById('upcoming-list');
   if (upcoming.length === 0) {
@@ -1070,7 +1078,6 @@ function renderDashboard() {
     }).join('');
   }
 }
-
 function conceptItem(c, mini=false) {
   const dueStr = c.fsrs.due ? (isDue(c) ? '<span style="color:var(--accent2);font-family:var(--mono);font-size:11px;">HOY</span>' : `<span style="color:var(--text3);font-family:var(--mono);font-size:11px;">+${getDueIn(c)}d</span>`) : '';
   const revBadge = c.revision
@@ -1090,7 +1097,6 @@ function conceptItem(c, mini=false) {
     ${dueStr}
   </div>`;
 }
-
 function toggleRevision(id) {
   const db = getDB();
   const c = db.conceptos.find(x => x.id === id);
@@ -1101,7 +1107,6 @@ function toggleRevision(id) {
   renderDashboard();
   toast(c.revision ? '⚑ Marcado para revisión con IA' : '⚑ Revisión desactivada');
 }
-
 // ═══════════════════════════════════════════════════════════════
 // CONCEPTS
 // ═══════════════════════════════════════════════════════════════
@@ -1109,40 +1114,36 @@ function renderConceptList() {
   const db = getDB();
   const q = (document.getElementById('search-input')?.value || '').toLowerCase();
   const activeDomains = [...document.querySelectorAll('.filter-btn.active')].map(b => b.dataset.domain);
-
-  // Domain filters
   const domains = [...new Set(db.conceptos.map(c => c.dominio))];
   const filterBar = document.getElementById('domain-filters');
   filterBar.innerHTML = domains.map(d => `<button class="filter-btn ${activeDomains.includes(d)?'active':''}" data-domain="${d}" onclick="toggleDomainFilter(this)">${d}</button>`).join('');
-
   let list = db.conceptos;
   if (q) list = list.filter(c => c.nombre.toLowerCase().includes(q) || c.dominio.toLowerCase().includes(q) || c.tags.some(t => t.toLowerCase().includes(q)));
   if (activeDomains.length) list = list.filter(c => activeDomains.includes(c.dominio));
-
   const el = document.getElementById('concept-list');
   document.getElementById('concepts-count').textContent = `${list.length} de ${db.conceptos.length} conceptos`;
-
   if (list.length === 0) {
     el.innerHTML = `<div class="empty"><div class="empty-icon">🧠</div><div class="empty-title">Sin conceptos</div><div class="empty-sub">Agrega tu primer concepto o importa un JSON.</div></div>`;
     return;
   }
   el.innerHTML = list.map(c => conceptItem(c)).join('');
 }
-
 function toggleDomainFilter(btn) {
   btn.classList.toggle('active');
   renderConceptList();
 }
-
 function showConceptDetail(id) {
   const db = getDB();
   const c = db.conceptos.find(x => x.id === id);
   if (!c) return;
-
   document.getElementById('modal-concept-title').textContent = c.nombre;
-
   const errPending = (c.errores_previos||[]).filter(e => !e.corregido);
   const daysUntilDue = getDueIn(c);
+
+  // Build HTML — text fields use latexHtml() to be processed after insertion
+  const definicionHtml = latexHtml(c.definicion_actual, 'latex-content', 'detail-definicion-' + c.id);
+  const mejoras = (c.mejoras_acumuladas||[]);
+  const ejercicios = (c.ultimos_ejercicios||[]);
 
   document.getElementById('modal-concept-body').innerHTML = `
     <div class="detail-grid">
@@ -1154,7 +1155,6 @@ function showConceptDetail(id) {
         </div>
         <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">ID: ${c.id}</div>
       </div>
-
       <div class="detail-section">
         <div class="detail-section-title">Estados</div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
@@ -1168,38 +1168,33 @@ function showConceptDetail(id) {
           </div>
         </div>
       </div>
-
       <div class="detail-section">
         <div class="detail-section-title">Definición actual</div>
-        <div style="font-size:13px;line-height:1.6;">${c.definicion_actual}</div>
+        ${definicionHtml}
         ${(c.historial_definiciones||[]).length > 1 ? `<div style="margin-top:8px;font-size:11px;color:var(--text3);">${c.historial_definiciones.length} versiones en historial</div>` : ''}
       </div>
-
-      ${(c.mejoras_acumuladas||[]).length ? `<div class="detail-section">
+      ${mejoras.length ? `<div class="detail-section">
         <div class="detail-section-title">Mejoras acumuladas</div>
-        ${c.mejoras_acumuladas.map(m=>`<div style="font-size:12px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border);">• ${m}</div>`).join('')}
+        ${mejoras.map(m=>`<div style="padding:3px 0;border-bottom:1px solid var(--border);">${latexHtml(String(m), 'latex-content')}</div>`).join('')}
       </div>` : ''}
-
-      ${(c.ultimos_ejercicios||[]).length ? `<div class="detail-section">
+      ${ejercicios.length ? `<div class="detail-section">
         <div class="detail-section-title">Últimos ejercicios</div>
-        ${c.ultimos_ejercicios.map(e=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);">
+        ${ejercicios.map(e=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);">
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;">
             <span class="tag tag-gray">${e.formato}</span>
             <span style="font-family:var(--mono);font-size:10px;color:var(--text3);">dif: ${e.dificultad}</span>
           </div>
-          <div style="font-size:12px;color:var(--text2);">${e.descripcion}</div>
+          ${latexHtml(e.descripcion, 'latex-content')}
         </div>`).join('')}
       </div>` : ''}
-
       ${errPending.length ? `<div class="detail-section" style="border-color:rgba(248,113,113,0.3);">
         <div class="detail-section-title" style="color:var(--red);">⚠ Errores pendientes (${errPending.length})</div>
         ${errPending.map(e=>`<div style="padding:5px 0;border-bottom:1px solid var(--border);">
           <span class="tag tag-red">${e.tipo}</span>
-          <div style="font-size:12px;color:var(--text2);margin-top:4px;">${e.descripcion}</div>
+          <div style="margin-top:4px;">${latexHtml(e.descripcion, 'latex-content')}</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px;">${e.fecha}</div>
         </div>`).join('')}
       </div>` : ''}
-
       <div class="detail-section">
         <div class="detail-section-title">FSRS</div>
         <div style="display:flex;gap:16px;font-family:var(--mono);font-size:12px;flex-wrap:wrap;">
@@ -1209,16 +1204,19 @@ function showConceptDetail(id) {
           <span>lapses: <span class="hl-red">${c.fsrs.lapses||0}</span></span>
         </div>
       </div>
-
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-concept');showEditModal('${c.id}')">✏ Editar</button>
         <button class="btn btn-danger btn-sm" onclick="closeModal('modal-concept');deleteConcept('${c.id}')">🗑 Eliminar</button>
       </div>
     </div>
   `;
+
+  // Trigger LaTeX rendering on all marked elements inside the modal body
+  const body = document.getElementById('modal-concept-body');
+  processLatexInContainer(body);
+
   openModal('modal-concept');
 }
-
 function showEditModal(id) {
   const db = getDB();
   const c = db.conceptos.find(x => x.id === id);
@@ -1231,20 +1229,25 @@ function showEditModal(id) {
   loadChipsFromConcept(c);
   document.querySelector('#modal-add .modal-title').textContent = 'Editar Concepto';
   document.querySelector('#modal-add .btn-primary').onclick = () => saveConcept(id);
+  // Trigger preview for existing content
+  updateLatexPreview('add-definicion', 'preview-definicion');
   openModal('modal-add');
 }
-
 function showAddModal() {
   ['add-nombre','add-dominio','add-definicion'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   document.getElementById('add-estado-teoria').value = 'nuevo';
   document.getElementById('add-estado-practica').value = 'nuevo';
   resetChipState();
+  // Reset preview
+  const preview = document.getElementById('preview-definicion');
+  if (preview) {
+    preview.className = 'latex-preview-box latex-preview-empty';
+    preview.textContent = 'Escribe para ver el preview…';
+  }
   document.querySelector('#modal-add .modal-title').textContent = 'Nuevo Concepto';
   document.querySelector('#modal-add .btn-primary').onclick = () => addConcept();
   openModal('modal-add');
 }
-
-// Flush whatever is typed in the tag input that hasn't been confirmed yet
 function flushPendingTagInput() {
   const inp = document.getElementById('add-tags-input');
   if (!inp) return;
@@ -1252,19 +1255,16 @@ function flushPendingTagInput() {
   if (val) { addTagChip(val); inp.value = ''; }
   document.getElementById('ac-tags').classList.remove('open');
 }
-
 function addConcept() {
   flushPendingTagInput();
   const nombre = document.getElementById('add-nombre').value.trim();
   const dominio = document.getElementById('add-dominio').value.trim();
   const definicion = document.getElementById('add-definicion').value.trim();
   if (!nombre || !dominio || !definicion) { toast('Nombre, dominio y definición son requeridos'); return; }
-
   const db = getDB();
   const id = String(Date.now());
   const tags = _addTags.slice();
   const requiere = _addRequiere.map(r => r.id);
-
   db.conceptos.push({
     id, nombre, dominio, tags,
     requiere,
@@ -1282,7 +1282,6 @@ function addConcept() {
   renderConceptList();
   toast('Concepto agregado ✓');
 }
-
 function saveConcept(id) {
   flushPendingTagInput();
   const db = getDB();
@@ -1292,7 +1291,6 @@ function saveConcept(id) {
   const dominio = document.getElementById('add-dominio').value.trim();
   const definicion = document.getElementById('add-definicion').value.trim();
   if (!nombre || !dominio || !definicion) { toast('Campos requeridos vacíos'); return; }
-
   if (definicion !== c.definicion_actual) {
     c.historial_definiciones = c.historial_definiciones || [];
     c.historial_definiciones.push({ fecha: today(), texto: definicion });
@@ -1308,7 +1306,6 @@ function saveConcept(id) {
   renderConceptList();
   toast('Concepto actualizado ✓');
 }
-
 function deleteConcept(id) {
   if (!confirm('¿Eliminar este concepto? Esta acción no se puede deshacer.')) return;
   const db = getDB();
@@ -1317,17 +1314,14 @@ function deleteConcept(id) {
   renderConceptList();
   toast('Concepto eliminado');
 }
-
 // ═══════════════════════════════════════════════════════════════
 // SESSION
 // ═══════════════════════════════════════════════════════════════
 function renderSession() {
   const db = getDB();
   const due = db.conceptos.filter(c => isDue(c));
-
   const listEl = document.getElementById('session-concept-list');
   document.getElementById('session-count-tag').textContent = due.length + ' conceptos';
-
   if (due.length === 0) {
     listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">Sin conceptos pendientes hoy. ¡Vuelve mañana!</div>';
   } else {
@@ -1341,20 +1335,16 @@ function renderSession() {
         <span class="state-pill state-${c.estado_practica}">P</span>
       </div>`).join('');
   }
-
   generateSessionPackage();
 }
-
 function generateSessionPackage() {
   const db = getDB();
   const due = db.conceptos.filter(c => isDue(c));
   const energy = document.getElementById('energy-select')?.value || '';
-
   const indice_global = db.conceptos.map(c => ({
     id: c.id, nombre: c.nombre, dominio: c.dominio,
     tags: c.tags, estado_teoria: c.estado_teoria, estado_practica: c.estado_practica
   }));
-
   const conceptos_hoy = due.map(c => ({
     id: c.id,
     nombre: c.nombre,
@@ -1374,7 +1364,6 @@ function generateSessionPackage() {
       concepto_relacionado_id: e.concepto_relacionado || null
     }))
   }));
-
   const pkg = {
     indice_global,
     sesion: {
@@ -1383,37 +1372,29 @@ function generateSessionPackage() {
       conceptos_hoy
     }
   };
-
   document.getElementById('session-package-preview').textContent = JSON.stringify(pkg, null, 2);
 }
-
 function copySessionPackage() {
   const text = document.getElementById('session-package-preview').textContent;
   if (!text || text === '—') { toast('Primero genera el paquete'); return; }
   navigator.clipboard.writeText(text).then(() => toast('📋 Paquete copiado al portapapeles')).catch(() => {
-    // Fallback
     const ta = document.createElement('textarea');
     ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     toast('📋 Paquete copiado');
   });
 }
-
 // ═══════════════════════════════════════════════════════════════
 // APPLY DIFF
 // ═══════════════════════════════════════════════════════════════
 function applyDiff() {
   const raw = document.getElementById('diff-input').value.trim();
   if (!raw) { toast('Pega el JSON de la IA primero'); return; }
-
   let diff;
   try { diff = JSON.parse(raw); }
   catch { toast('JSON inválido — revisa el formato'); return; }
-
   if (!diff.actualizaciones || !Array.isArray(diff.actualizaciones)) {
     toast('El JSON no tiene el campo "actualizaciones"'); return;
   }
-
-  // Check for split recommendations — show banner before applying
   const splits = diff.actualizaciones.filter(u => u.split_recomendado === true);
   if (splits.length > 0) {
     const db = getDB();
@@ -1436,22 +1417,16 @@ function applyDiff() {
       </div>`;
     return;
   }
-
   executeDiff(diff);
 }
-
 function executeDiff(diff) {
   if (!diff) diff = window._pendingDiff;
   if (!diff) { toast('No hay diff pendiente'); return; }
-
   const db = getDB();
   const results = [];
-
   diff.actualizaciones.forEach(upd => {
     const c = db.conceptos.find(x => x.id === upd.id);
     if (!c) { results.push({ id: upd.id, status: 'error', msg: 'Concepto no encontrado' }); return; }
-
-    // Apply FSRS rating
     if (upd.calificacion_fsrs && [1,2,3,4].includes(upd.calificacion_fsrs)) {
       applyFSRSRating(c, upd.calificacion_fsrs);
     }
@@ -1486,16 +1461,12 @@ function executeDiff(diff) {
       const err = (c.errores_previos||[]).find(e => e.id_error === upd.error_corregido_id);
       if (err) err.corregido = true;
     }
-    // Auto-clear revision if IA marked it resolved
     if (upd.revision_resuelta === true) c.revision = false;
-
     results.push({ id: upd.id, nombre: c.nombre, status: 'ok', fsrs: upd.calificacion_fsrs, due: c.fsrs.due });
   });
-
   db.meta.total_sesiones = (db.meta.total_sesiones || 0) + 1;
   saveDB(db);
   window._pendingDiff = null;
-
   document.getElementById('diff-result').innerHTML = `
     <div class="card">
       <div class="card-header"><div class="card-title">Resultado de la actualización</div></div>
@@ -1513,7 +1484,6 @@ function executeDiff(diff) {
   toast('✓ Diff aplicado — ' + results.filter(r=>r.status==='ok').length + ' conceptos actualizados');
   document.getElementById('diff-input').value = '';
 }
-
 function createSplitCard(parentId) {
   const db = getDB();
   const parent = db.conceptos.find(x => x.id === parentId);
@@ -1529,13 +1499,11 @@ function createSplitCard(parentId) {
   document.querySelector('#modal-add .modal-title').textContent = `Nueva tarjeta hija de: ${parent.nombre}`;
   toast('Completa el nombre y definición de la nueva tarjeta');
 }
-
 // ═══════════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
 function renderConfig() {
   const cfg = getGistConfig();
-  // Always populate fields from whatever is saved, even if partial
   const tokenEl = document.getElementById('gh-token');
   const gistEl = document.getElementById('gist-id');
   if (tokenEl && cfg.token) tokenEl.value = cfg.token;
@@ -1543,7 +1511,6 @@ function renderConfig() {
   if (cfg.token || cfg.gistId) updateGistStatus('configured');
   updateAutosaveToggleBtn();
 }
-
 function updateGistStatus(state) {
   const dot = document.getElementById('gist-dot');
   const txt = document.getElementById('gist-status-text');
@@ -1552,7 +1519,6 @@ function updateGistStatus(state) {
   else if (state === 'error') { dot.style.background = 'var(--red)'; dot.style.boxShadow = 'none'; txt.textContent = 'Error'; txt.style.color = 'var(--red)'; }
   else { dot.style.background = 'var(--text3)'; dot.style.boxShadow = 'none'; txt.textContent = 'Sin configurar'; txt.style.color = 'var(--text3)'; }
 }
-
 function saveGistConfig() {
   const token = document.getElementById('gh-token').value.trim();
   const gistId = document.getElementById('gist-id').value.trim();
@@ -1563,32 +1529,22 @@ function saveGistConfig() {
   if (merged.token || merged.gistId) updateGistStatus('configured');
   toast('Configuración guardada ✓');
 }
-
 async function syncGist(direction) {
-  // Read live from inputs first (user may have typed without saving)
   const tokenInput = document.getElementById('gh-token')?.value.trim();
   const gistInput  = document.getElementById('gist-id')?.value.trim();
   const saved = getGistConfig();
   const token  = tokenInput  || saved.token  || '';
   const gistId = gistInput   || saved.gistId || '';
-
-  const dot = document.getElementById('gist-dot');
-  const txt = document.getElementById('gist-status-text');
   updateGistStatus('syncing');
-
   try {
     if (direction === 'push') {
       if (!token) { toast('Se necesita token para subir a Gist'); updateGistStatus(saved.token?'configured':'error'); return; }
       const db = getDB();
-
-      // SAFETY: never push an empty or near-empty DB
       if (db.conceptos.length === 0) {
         toast('⛔ Push bloqueado — BD local vacía. Descarga primero si tienes datos en Gist.');
         updateGistStatus(gistId ? 'configured' : 'error');
         return;
       }
-
-      // SAFETY: if gistId exists, fetch remote count first and warn if local has fewer concepts
       if (gistId) {
         try {
           const headers = token ? { 'Authorization': `token ${token}` } : {};
@@ -1619,10 +1575,8 @@ async function syncGist(direction) {
           }
         } catch (_) { /* if check fails just proceed */ }
       }
-
       const content = JSON.stringify(db, null, 2);
       let res, newGistId = gistId;
-
       if (gistId) {
         res = await fetch(`https://api.github.com/gists/${gistId}`, {
           method: 'PATCH',
@@ -1631,7 +1585,6 @@ async function syncGist(direction) {
         });
         if (!res.ok) throw new Error(`Error al subir: ${res.status} ${res.statusText}`);
       } else {
-        // Create new gist
         res = await fetch('https://api.github.com/gists', {
           method: 'POST',
           headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
@@ -1643,17 +1596,11 @@ async function syncGist(direction) {
         const gistEl = document.getElementById('gist-id');
         if (gistEl) gistEl.value = newGistId;
       }
-
-      // Always persist latest token + gistId
       localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify({ token, gistId: newGistId }));
       updateGistStatus('configured');
       toast('⬆ BD subida a Gist ✓' + (newGistId !== gistId ? ' · Gist ID guardado' : ''));
-
     } else {
-      // PULL — gistId required, token optional (works for private if token present)
       if (!gistId) { toast('Ingresa el Gist ID en Config → Gist primero'); updateGistStatus(token?'configured':'error'); return; }
-
-      // SAFETY: warn if local has data that would be replaced
       const localDB = getDB();
       if (localDB.conceptos.length > 0) {
         const ok = confirm(
@@ -1670,7 +1617,6 @@ async function syncGist(direction) {
       const data = await res.json();
       const file = data.files['neuraldeck_db.json'];
       if (!file) throw new Error('Archivo "neuraldeck_db.json" no encontrado en el Gist');
-      // Gist may return truncated content — fetch raw_url if needed
       let rawContent = file.content;
       if (file.truncated) {
         const raw = await fetch(file.raw_url, { headers });
@@ -1678,7 +1624,6 @@ async function syncGist(direction) {
       }
       const db = sanitizeDB(JSON.parse(rawContent));
       saveDB(db);
-      // Persist config so this compu also has it saved
       localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify({ token, gistId }));
       updateGistStatus('configured');
       toast(`⬇ BD descargada — ${db.conceptos.length} conceptos`);
@@ -1689,24 +1634,20 @@ async function syncGist(direction) {
     toast('Error: ' + e.message);
   }
 }
-
 function toggleToken() {
   const inp = document.getElementById('gh-token');
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
-
 function renderRawJSON() {
   const db = getDB();
   document.getElementById('raw-json-view').textContent = JSON.stringify(db, null, 2);
 }
-
 function copyRawJSON() {
   const text = document.getElementById('raw-json-view').textContent;
   navigator.clipboard.writeText(text).then(()=>toast('📋 JSON copiado')).catch(()=>{
     const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 JSON copiado');
   });
 }
-
 function exportJSON() {
   const db = getDB();
   const blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
@@ -1715,7 +1656,6 @@ function exportJSON() {
   URL.revokeObjectURL(url);
   toast('BD exportada ✓');
 }
-
 function importJSON(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -1737,7 +1677,6 @@ function importJSON(e) {
   };
   reader.readAsText(file);
 }
-
 function resetDB() {
   if (!confirm('¿Reiniciar la base de datos? PERDERÁS TODOS TUS CONCEPTOS.')) return;
   if (!confirm('¿Estás completamente seguro? No hay vuelta atrás.')) return;
@@ -1745,66 +1684,47 @@ function resetDB() {
   renderDashboard();
   toast('BD reiniciada');
 }
-
 function renderTutorPrompt() {
   const prompt = getTutorPrompt();
   document.getElementById('tutor-prompt-display').textContent = prompt;
 }
-
 function copyTutorPrompt() {
   const text = getTutorPrompt();
   navigator.clipboard.writeText(text).then(()=>toast('📋 Prompt copiado')).catch(()=>{
     const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 Prompt copiado');
   });
 }
-
 function getTutorPrompt() {
   return `# ROLE: Tutor Experto en Aprendizaje Activo y Sobrecarga Progresiva
-
 Eres un sistema avanzado de tutoría diseñado para gestionar y expandir mi conocimiento mediante repetición espaciada y recuerdo activo. Actúas como un "entrenador de gimnasio mental": aumentas la dificultad de forma incremental, detectas patrones de error y adaptas cada sesión a mi estado cognitivo real. El sistema es completamente agnóstico al dominio — matemáticas, inglés, programación, electrónica, ciencias, historia, o cualquier otra disciplina funcionan igual.
-
 ---
-
 ## 1. INICIO DE SESIÓN — CALIBRACIÓN COGNITIVA
-
 Al inicio de cada sesión pregunta: "¿Cómo estás hoy para estudiar?" (a menos que el campo "energia" en el JSON ya esté especificado, en cuyo caso úsalo directamente).
-
 ### Si detectas cansancio, poco tiempo, estrés o similar:
 - Solo revisa conceptos que el usuario ya conoce (estado_teoria ≠ "nuevo") y cuyos errores previos sean de tipo confusion_conceptual simple o error_de_aplicacion de dificultad ≤ 2.
 - Mantén la dificultad de ejercicios en el nivel actual del concepto — sin subir.
 - PROHIBIDO: +1kg, interleaving, free recall, conceptos con estado_teoria = "nuevo".
 - Los ejercicios deben poder resolverse en menos de 5 minutos.
-
 ### Si la respuesta es neutral o no da señales claras:
 - Flujo estándar: conceptos pendientes, dificultad sube hasta +1, +1kg si aplica.
-
 ### Si menciona energía alta, tiempo disponible, o pide sesión intensa:
 - Dificultad puede subir hasta +1.5, interleaving multidisciplinario habilitado, free recall habilitado.
-
 ---
-
 ## 2. DATOS DE SESIÓN
-
 Recibirás un JSON con dos secciones:
 1. "indice_global": todos los conceptos del usuario (id, nombre, dominio, tags, estados) — úsalo para armar ejercicios multidisciplinarios y combinar conceptos de distintos dominios.
 2. "sesion.conceptos_hoy": los conceptos a revisar hoy con todo el detalle necesario.
-
 ---
-
 ## 3. PROTOCOLO DE INTERACCIÓN
-
 ### Paso 0: Metacognición previa (SIEMPRE, sin excepción)
 Antes de que el usuario dé su definición de cualquier concepto, pregunta:
 "Del 1 al 5, ¿qué tan seguro estás de este concepto?"
-
 - 4–5 y fallo → falso_positivo. Prioridad máxima. Pesa el doble en futuros repasos.
 - 1–2 y acierto → concepto más frágil de lo que parece; reduce el intervalo de repaso.
 - 3 → neutro, protocolo normal.
-
 ### Paso 1: Validación
 - Correcto → Confirma brevemente. Continúa.
 - Incorrecto o confuso → Señálalo, da la corrección precisa y categoriza el error como uno de: confusion_conceptual | error_de_aplicacion | falso_positivo | otro.  Si el concepto tiene prerequisitos en 'requiere' que están en duda o sin evaluar en esta sesión, menciónalos antes de continuar.
-
 ### Paso 2: Respuesta de seguimiento — completamente aleatoria
 Elige de forma no determinista (aleatoria) entre:
 - Pregunta de profundización sobre el concepto actual. Esta pregunta **no es fija ni predefinida** se construye en el momento a partir de:  :
@@ -1816,14 +1736,10 @@ Elige de forma no determinista (aleatoria) entre:
 - Ejercicio combinado con otros conceptos del índice global.
 - Mini free recall parcial. "Sin mirar nada, ¿qué otros conceptos recuerdas que se relacionen con este?"
 - Silencio activo (solo confirmar y pasar al siguiente concepto)
-
 ### Paso 3: Sobrecarga Progresiva (+1kg)
 Activa SOLO si: estado_teoria = "dominado" Y estado_practica = "dominado" Y tercera respuesta correcta consecutiva Y sesión de energía normal o alta. La carga debe ser mínima: una característica, una excepción, una conexión, una pregunta de seguimiento (como/cuando/porque/cuales/donde, etc relacionado al concepto). Si dudas si es demasiado, es demasiado.
-
 ---
-
 ## 4. GENERACIÓN DE EJERCICIOS PRÁCTICOS
-
 Revisa 'ultimos_ejercicios'. El nuevo ejercicio debe tener 'dificultad' = último + 0.5 o +1 máximo. Si 'dificultad' ya es 6, varía el formato en lugar de subir más. Nunca repitas el mismo formato dos veces seguidas para el mismo concepto. El ejercicio ocurre en un escenario concreto y real.
 Escala de dificultad (1–6):
 1 — Reconocer o identificar el concepto en un ejemplo dado
@@ -1832,32 +1748,22 @@ Escala de dificultad (1–6):
 4 — Usar dentro de un sistema con múltiples piezas
 5 — Detectar, corregir o razonar en contexto ambiguo o con información incompleta
 6 — Generar una solución completa desde 0 a un problema dado sin nada de contexto previo.
-
 ---
-
 ## 5. REPASO HOLÍSTICO Y ANÁLISIS DE ERRORES 
-
 No hay un disparador fijo para este modo. La IA lo activa de forma aleatoria durante sesiones de energía normal o alta, o cuando el usuario lo solicita con "modo evaluación". No hay un intervalo de interacciones definido.
-
 ### Free recall: 
 Sin previo aviso, la IA puede pedir: _"Sin mirar nada, escribe todo lo que recuerdas sobre [dominio o etiqueta]."_ La IA compara con la BD:
 * Mencionado correctamente → refuerza el intervalo de repaso. 
 * Omitido → programa repaso inmediato. 
 * Mencionado con error → se trata como 'falso_positivo'. 
-
 ### Ejercicios de interleaving:
 Combina conceptos de distintos dominios o etiquetas. Sin límite fijo de cuántos conceptos combinar — el criterio es la complejidad cognitiva razonable para el nivel de energía declarado. Prioriza combinaciones donde al menos un concepto tenga errores previos sin corregir.
-
 ### Foco en debilidades: 
 Para conceptos con 'falso_positivo' o 'confusion_conceptual' sin corregir: lanza el concepto fallido aplicado a un escenario completamente nuevo — nunca el mismo contexto del error original. 
-
 ### Prerequisitos huérfanos: 
 Si un concepto avanzado falla y su 'requiere' tiene conceptos no evaluados en la sesión, retrocede a evaluarlos primero.
-
 ---
-
 ## 6. FORMATO DE RESPUESTA DURANTE LA SESIÓN
-
 🧠 Confianza reportada: [1–5]
 ✅ / ❌ / ⚠️ Resultado: [Correcto / Incorrecto / Confuso]
 💬 Feedback: [Validación breve O corrección precisa + tipo de error si aplica]
@@ -1868,13 +1774,9 @@ Si un concepto avanzado falla y su 'requiere' tiene conceptos no evaluados en la
    Formato: [tipo de ejercicio adaptado al dominio]
    Dificultad: [1–6]
    Ejercicio: [descripción con escenario concreto]
-
 ---
-
 ## 7. AL FINALIZAR LA SESIÓN — JSON DE ACTUALIZACIÓN
-
 Cuando el usuario diga "terminar sesión" o "dame el JSON de actualización", devuelve ÚNICAMENTE el JSON a continuación, sin texto adicional, sin bloques de código markdown, sin explicaciones. Solo el JSON puro.
-
 REGLAS ESTRICTAS DEL JSON DE ACTUALIZACIÓN:
 - Devuelve SOLO los campos que cambiaron. Si un campo no cambió, OMÍTELO completamente del objeto — no lo incluyas como null excepto donde se indica explícitamente.
 - Nunca inventes IDs. Usa exclusivamente los IDs que vinieron en el JSON de sesión.
@@ -1883,9 +1785,7 @@ REGLAS ESTRICTAS DEL JSON DE ACTUALIZACIÓN:
 - Los únicos valores válidos para tipo en nuevo_error son exactamente: "confusion_conceptual" | "error_de_aplicacion" | "falso_positivo" | "otro"
 - Los únicos valores válidos para calificacion_fsrs son exactamente: 1, 2, 3, 4 (enteros)
 - Los únicos valores válidos para dificultad en nuevo_ejercicio son exactamente: 1, 2, 3, 4, 5,6 (enteros o con .5)
-
 EJEMPLO COMPLETAMENTE DOCUMENTADO:
-
 {
   "actualizaciones": [
     {
@@ -1966,23 +1866,17 @@ EJEMPLO COMPLETAMENTE DOCUMENTADO:
 
 
 ---
-
 ## 8. CAMPO "revision" — PRIORIDAD DE CLARIFICACIÓN
-
 Si un concepto en sesion.conceptos_hoy tiene "revision": true, significa que el usuario tiene dudas activas con su propia definición de ese concepto. Para esos conceptos:
 - Después de recibir su definición, SIEMPRE profundiza — nunca silencio activo.
 - Ofrece una corrección o refinamiento explícito de la definición de ser necesario, aunque la respuesta sea parcialmente correcta.
 - Prioriza ese concepto antes que los demás si hay múltiples conceptos en sesión.
 - Si al final del concepto la definición quedó clarificada, incluye "revision_resuelta": true en el diff de ese concepto para que la app desactive el flag automáticamente.
-
 ---
-
 ## 9. FORMATOS ESTANDARIZADOS DE PREGUNTA
-
 Además de los formatos libres, puedes usar estos formatos estructurados cuando aporten más que una pregunta abierta o cuando el usuario asi lo indique en la definición del concepto. Elige el formato según el que el usuario te indico o sino según el dominio y lo que quieras evaluar:
-
 ### opcion_multiple_visual
-4 opciones donde cada una describe visualmente algo (gráfica, diagrama, forma, comportamiento). La IA describe cada opción en imagenes o graficos de ser posible o sino en algun formato tipo mermaid o plantuml y sino en texto o ASCII. El usuario elige A/B/C/D.
+4 opciones donde cada una describe visualmente algo (gráfica, diagrama, forma, comportamiento). La IA describe cada opción en imagenes o graficos de ser posible o sino en algun formato tipo mermaid o plantuml o sino en texto o ASCII. El usuario elige A/B/C/D.
 Ideal para: funciones matemáticas, formas de onda, diagramas de circuito, estructuras de datos, output de código.
 Ejemplo:
 "¿Cuál de estas describe correctamente la curva sigmoide?
@@ -1999,19 +1893,15 @@ Ejemplo: "margin → padding → border → [?] → content"
 ### ordenar_pasos
 Se dan los pasos de un proceso en desorden. El usuario los ordena.
 Ideal para: algoritmos, flujos HTTP, procesos de compilación, eventos del DOM.
-
 ### identificar_error
 Se presenta código, una definición, un circuito o un argumento con un error deliberado. El usuario lo encuentra y explica por qué.
 Ideal para: debugging, lógica, razonamiento crítico.
-
 ### asociar_columnas
 Dos columnas de conceptos relacionados. El usuario empareja cada elemento de A con el correcto de B.
 Ideal para: conceptos y sus definiciones, propiedades y sus valores, eventos y sus efectos.
-
 ### verdadero_falso_justificado
 Una afirmación. El usuario dice V o F y DEBE justificar en una oración. Sin justificación no cuenta.
 Ideal para: mitos comunes, excepciones a reglas, casos límite.
-
 ### produccion_en_contexto
 Se da un escenario real y el usuario produce algo: código, texto, fórmula, diagrama ASCII, argumentación.
 Ideal para: idiomas, programación, matemáticas aplicadas.
@@ -2023,9 +1913,7 @@ Cuando uses un formato estandarizado, indícalo así en el reto práctico:
    Ejercicio: [el contenido del ejercicio con el formato aplicado]
 
 ---
-
 ## 10. REGLAS DE FUSIÓN EN LA APP (para tu contexto — no modifiques estos campos)
-
 | Campo                    | Regla                                                                                        |
 |--------------------------|----------------------------------------------------------------------------------------------|
 | definicion_actual        | Si viene definicion_refinada: mover actual a historial con fecha, reemplazar con la nueva.   |
@@ -2039,11 +1927,8 @@ Cuando uses un formato estandarizado, indícalo así en el reto práctico:
 | split_recomendado        | La app muestra un banner. El usuario decide si crear tarjeta hija o ignorar.                 |
 | Parámetros FSRS          | La app los recalcula con calificacion_fsrs. La IA NUNCA los toca.                            |
 | id, nombre, dominio, tags, requiere | INMUTABLES. La app nunca los modifica desde el diff.                          |
-
 ---
-
 ## 11. REGLAS DE ORO (nunca violar)
-
 1. Sistema multidisciplinario. Adapta lenguaje, ejemplos y formatos al dominio del concepto.
 2. Nunca +1kg si estado_practica no está en "dominado".
 3. Nunca el mismo formato de ejercicio dos veces seguidas para el mismo concepto.
@@ -2055,7 +1940,6 @@ Cuando uses un formato estandarizado, indícalo así en el reto práctico:
 9. Nunca ajustes el ritmo de la sesión sin preguntar primero, y solo si los tres indicadores de cansancio ocurren simultáneamente con 95% de certeza.
 10. Si un concepto tiene revision: true, SIEMPRE profundiza — nunca silencio activo en ese concepto.`;
 }
-
 // ═══════════════════════════════════════════════════════════════
 // TEMPLATE MODAL
 // ═══════════════════════════════════════════════════════════════
@@ -2066,7 +1950,7 @@ function showTemplateModal() {
     "dominio": "programación / matemáticas / inglés / electrónica / ...",
     "tags": ["tag1", "tag2"],
     "requiere": [],
-    "definicion_actual": "Tu definición aquí.",
+    "definicion_actual": "Tu definición aquí. Puedes usar LaTeX: $E = mc^2$ o bloques $$\\int_0^\\infty e^{-x} dx = 1$$",
     "historial_definiciones": [{ "fecha": "YYYY-MM-DD", "texto": "Tu definición aquí." }],
     "estado_teoria": "nuevo",
     "estado_practica": "nuevo",
@@ -2078,20 +1962,17 @@ function showTemplateModal() {
   document.getElementById('template-display').textContent = JSON.stringify(template, null, 2);
   openModal('modal-template');
 }
-
 function copyTemplate() {
   const text = document.getElementById('template-display').textContent;
   navigator.clipboard.writeText(text).then(()=>toast('📋 Plantilla copiada')).catch(()=>{
     const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 Plantilla copiada');
   });
 }
-
 // ═══════════════════════════════════════════════════════════════
 // MODALS & TOAST
 // ═══════════════════════════════════════════════════════════════
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
 let toastTimer;
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -2099,57 +1980,43 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2800);
 }
-
-// Close modals on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
 });
-
-// Re-generate package when energy changes
 document.addEventListener('change', e => {
   if (e.target.id === 'energy-select') generateSessionPackage();
 });
-
 // ═══════════════════════════════════════════════════════════════
 // AUTOSAVE ENGINE
 // ═══════════════════════════════════════════════════════════════
 const AUTOSAVE_KEY = 'neuraldeck_autosave';
 const AUTOSAVE_LASTTIME_KEY = 'neuraldeck_autosave_lasttime';
-const AUTOSAVE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-
+const AUTOSAVE_INTERVAL_MS = 5 * 60 * 1000;
 let autosaveTimer = null;
 let lastSavedHash = null;
-
 function getDBHash() {
   const db = getDB();
   return `${db.conceptos.length}:${db.meta.ultima_actualizacion}:${JSON.stringify(db).length}`;
 }
-
 function isAutosaveEnabled() {
   const val = localStorage.getItem(AUTOSAVE_KEY);
-  return val === null ? true : val === '1'; // DEFAULT ON
+  return val === null ? true : val === '1';
 }
-
 function setAutosaveEnabled(val) {
   localStorage.setItem(AUTOSAVE_KEY, val ? '1' : '0');
 }
-
 function getLastSavedTime() {
   return localStorage.getItem(AUTOSAVE_LASTTIME_KEY) || null;
 }
-
 function setLastSavedTime(timeStr) {
   localStorage.setItem(AUTOSAVE_LASTTIME_KEY, timeStr);
 }
-
 function setAutosaveStatus(state, detail) {
   const dot = document.getElementById('autosave-dot');
   const label = document.getElementById('autosave-label');
   if (!dot || !label) return;
-
   const lastTime = getLastSavedTime();
   const lastSuffix = lastTime ? ` · ${lastTime}` : '';
-
   const states = {
     off:     { color: 'var(--text3)', shadow: 'none', anim: 'none',  text: `off${lastSuffix}` },
     idle:    { color: 'var(--green)', shadow: '0 0 5px var(--green)', anim: 'none', text: detail || `guardado${lastSuffix}` },
@@ -2163,7 +2030,6 @@ function setAutosaveStatus(state, detail) {
   dot.style.animation = s.anim;
   label.textContent = detail !== undefined ? detail : s.text;
 }
-
 function updateAutosaveToggleBtn() {
   const btn = document.getElementById('autosave-toggle-btn');
   if (!btn) return;
@@ -2171,40 +2037,33 @@ function updateAutosaveToggleBtn() {
   btn.textContent = enabled ? '⏸ Desactivar' : '▶ Activar';
   btn.className = enabled ? 'btn btn-danger btn-sm' : 'btn btn-green btn-sm';
 }
-
 async function runAutosave(silent = false) {
   const saved = getGistConfig();
   const tokenInput = document.getElementById('gh-token')?.value.trim();
   const gistInput  = document.getElementById('gist-id')?.value.trim();
   const token  = tokenInput  || saved.token  || '';
   const gistId = gistInput   || saved.gistId || '';
-
   if (!token) {
     setAutosaveStatus('error', 'sin token' + (getLastSavedTime() ? ` · ${getLastSavedTime()}` : ''));
     if (!silent) toast('⚠ Configura el token de GitHub para usar autoguardado');
     return;
   }
-
   const currentHash = getDBHash();
   if (currentHash === lastSavedHash) {
     const lastTime = getLastSavedTime();
     setAutosaveStatus('waiting', `activo · sin cambios${lastTime ? ' · ' + lastTime : ''}`);
     return;
   }
-
-  // SAFETY: never autosave an empty DB
   const dbCheck = getDB();
   if (dbCheck.conceptos.length === 0) {
     setAutosaveStatus('error', 'bloqueado · BD vacía');
     return;
   }
-
   setAutosaveStatus('pending');
   try {
     const db = getDB();
     const content = JSON.stringify(db, null, 2);
     let res, newGistId = gistId;
-
     if (gistId) {
       res = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: 'PATCH',
@@ -2225,9 +2084,7 @@ async function runAutosave(silent = false) {
         if (gistEl) gistEl.value = newGistId;
       }
     }
-
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
     lastSavedHash = currentHash;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
@@ -2235,16 +2092,14 @@ async function runAutosave(silent = false) {
     setAutosaveStatus('idle', `guardado ${timeStr}`);
     if (!silent) toast(`☁ Autoguardado — ${timeStr}`);
     updateGistStatus('configured');
-
   } catch (e) {
     const lastTime = getLastSavedTime();
     setAutosaveStatus('error', `error${lastTime ? ' · ' + lastTime : ''}`);
     if (!silent) toast('⚠ Autoguardado falló: ' + e.message);
   }
 }
-
 function startAutosave() {
-  stopAutosave(true); // stop timer only, don't flip the flag yet
+  stopAutosave(true);
   setAutosaveEnabled(true);
   updateAutosaveToggleBtn();
   const lastTime = getLastSavedTime();
@@ -2252,7 +2107,6 @@ function startAutosave() {
   runAutosave(true);
   autosaveTimer = setInterval(() => runAutosave(false), AUTOSAVE_INTERVAL_MS);
 }
-
 function stopAutosave(timerOnly = false) {
   if (autosaveTimer) { clearInterval(autosaveTimer); autosaveTimer = null; }
   if (!timerOnly) {
@@ -2262,7 +2116,6 @@ function stopAutosave(timerOnly = false) {
     setAutosaveStatus('off', `off${lastTime ? ' · ' + lastTime : ''}`);
   }
 }
-
 function toggleAutosave() {
   if (isAutosaveEnabled()) {
     stopAutosave();
@@ -2278,14 +2131,11 @@ function toggleAutosave() {
     toast('☁ Autoguardado activado — cada 5 minutos');
   }
 }
-
 // ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
 renderDashboard();
 updateAutosaveToggleBtn();
-
-// Always start autosave by default; only skip if user explicitly turned it off
 if (isAutosaveEnabled()) {
   startAutosave();
 } else {
