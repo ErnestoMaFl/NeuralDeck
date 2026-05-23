@@ -382,3 +382,80 @@ select.input { cursor: pointer; }
 .latex-preview-box .katex         { color: var(--accent2); }
 .latex-preview-box .katex-display { margin: 6px 0; }
 .latex-preview-empty { color: var(--text3); font-size: 12px; font-style: italic; }
+
+/* ── Formato de respuesta grid ─────────────────────────────── */
+.formato-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media (max-width: 500px) { .formato-grid { grid-template-columns: 1fr; } }
+ 
+.formato-card {
+  display: block;
+  cursor: pointer;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  transition: border-color 0.15s, background 0.15s;
+  overflow: hidden;
+}
+/* Hide the native checkbox */
+.formato-card input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0; height: 0;
+}
+/* Checked state */
+.formato-card:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+/* Hover */
+.formato-card:hover {
+  border-color: var(--border2);
+  background: var(--surface3);
+}
+.formato-card:has(input:checked):hover {
+  border-color: var(--accent2);
+}
+ 
+.formato-card-inner {
+  padding: 11px 13px;
+}
+.formato-icon {
+  font-size: 18px;
+  font-family: var(--mono);
+  color: var(--accent2);
+  margin-bottom: 5px;
+  line-height: 1;
+}
+.formato-nombre {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.formato-desc {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.5;
+}
+/* Checked name color */
+.formato-card:has(input:checked) .formato-nombre { color: var(--accent2); }
+.formato-card:has(input:checked) .formato-icon   { color: var(--accent2); }
+ 
+/* ── Tag filter panel button active state ──────────────────── */
+.filter-btn.active {
+  background: var(--accent-dim);
+  border-color: rgba(124,106,247,0.4);
+  color: var(--accent2);
+}
+ 
+/* Revision filter active — use yellow to match revision badge */
+#revision-filter-btn.active {
+  background: var(--yellow-dim);
+  border-color: rgba(250,204,21,0.4);
+  color: var(--yellow);
+}
