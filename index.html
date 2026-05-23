@@ -35,7 +35,6 @@
       </div>
     </div>
   </nav>
-
   <main>
     <!-- ═══════════════ DASHBOARD ═══════════════ -->
     <div id="sec-dashboard" class="section active">
@@ -86,7 +85,32 @@
         <span class="search-icon">⌕</span>
         <input class="input" id="search-input" placeholder="Buscar por nombre, dominio, tag..." oninput="renderConceptList()">
       </div>
-      <div class="filter-bar" id="domain-filters"></div>
+
+      <!-- ── Filter bar: dominios + revisión activa ── -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <div class="filter-bar" id="domain-filters" style="margin-bottom:0;flex:1;min-width:0;"></div>
+        <!-- Revisión toggle -->
+        <button
+          id="revision-filter-btn"
+          class="filter-btn"
+          onclick="toggleRevisionFilter()"
+          title="Mostrar solo conceptos con revisión activa">
+          ⚑ Revisión activa
+        </button>
+        <!-- Tags toggle -->
+        <div style="position:relative;">
+          <button class="filter-btn" id="tag-filter-btn" onclick="toggleTagFilterPanel()" title="Filtrar por tag">
+            # Tags ▾
+          </button>
+          <div id="tag-filter-panel" style="display:none;position:absolute;top:calc(100% + 4px);right:0;z-index:200;
+            background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);
+            padding:10px 12px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+            <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Filtrar por tag</div>
+            <div id="tag-filter-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="concept-list"></div>
     </div>
 
@@ -99,7 +123,6 @@
         <button class="inner-tab active" onclick="sessionTab('prepare')">1 · Preparar</button>
         <button class="inner-tab"        onclick="sessionTab('apply')">2 · Aplicar Diff</button>
       </div>
-
       <div id="session-prepare">
         <div class="card mb-16">
           <div class="card-header">
@@ -129,7 +152,6 @@
           </div>
         </div>
       </div>
-
       <div id="session-apply" style="display:none;">
         <div class="card mb-16">
           <div class="card-header"><div class="card-title">Pegar diff de la IA</div></div>
@@ -267,20 +289,107 @@
           </div>
         </div>
       </div>
-      <div class="input-group">
-        <label class="input-label">Definición actual *</label>
-        <textarea class="input textarea" id="add-definicion" rows="3"
-          oninput="updateLatexPreview('add-definicion','preview-definicion')"></textarea>
-        <div class="latex-hint">
-          <span class="latex-hint-icon">∑</span>
-          Soporta LaTeX: <code style="font-size:10px;color:var(--accent2);">$inline$</code>
-          y <code style="font-size:10px;color:var(--accent2);">$$bloque$$</code>
-        </div>
-        <div class="latex-preview-wrap">
-          <div class="latex-preview-label">Preview</div>
-          <div class="latex-preview-box latex-preview-empty" id="preview-definicion">Escribe para ver el preview…</div>
+
+      <!-- ── Inner tabs: Definición / Formato de respuesta ── -->
+      <div class="inner-tabs" style="margin-bottom:14px;">
+        <button class="inner-tab active" id="modal-tab-def"     onclick="modalConceptTab('def')">Definición</button>
+        <button class="inner-tab"        id="modal-tab-formato" onclick="modalConceptTab('formato')">Formato de respuesta</button>
+      </div>
+
+      <!-- Panel: Definición -->
+      <div id="modal-panel-def">
+        <div class="input-group">
+          <label class="input-label">Definición actual *</label>
+          <textarea class="input textarea" id="add-definicion" rows="3"
+            oninput="updateLatexPreview('add-definicion','preview-definicion')"></textarea>
+          <div class="latex-hint">
+            <span class="latex-hint-icon">∑</span>
+            Soporta LaTeX: <code style="font-size:10px;color:var(--accent2);">$inline$</code>
+            y <code style="font-size:10px;color:var(--accent2);">$$bloque$$</code>
+          </div>
+          <div class="latex-preview-wrap">
+            <div class="latex-preview-label">Preview</div>
+            <div class="latex-preview-box latex-preview-empty" id="preview-definicion">Escribe para ver el preview…</div>
+          </div>
         </div>
       </div>
+
+      <!-- Panel: Formato de respuesta (oculto por defecto) -->
+      <div id="modal-panel-formato" style="display:none;">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6;">
+          Cuando seleccionas un formato, la IA evaluará este concepto con ese tipo de ejercicio
+          en lugar de pedir una definición libre. Puedes elegir uno o varios.
+        </div>
+        <div class="formato-grid">
+
+          <label class="formato-card">
+            <input type="checkbox" name="formato_respuesta" value="opcion_multiple_visual">
+            <div class="formato-card-inner">
+              <div class="formato-icon">⊞</div>
+              <div class="formato-nombre">Opción múltiple visual</div>
+              <div class="formato-desc">4 opciones que describen visualmente algo (gráfica, diagrama, forma, comportamiento). El usuario elige A/B/C/D.</div>
+            </div>
+          </label>
+
+          <label class="formato-card">
+            <input type="checkbox" name="formato_respuesta" value="completar_serie">
+            <div class="formato-card-inner">
+              <div class="formato-icon">…</div>
+              <div class="formato-nombre">Completar serie</div>
+              <div class="formato-desc">Secuencia con un elemento faltante. Ideal para patrones, algoritmos paso a paso, progresiones.</div>
+            </div>
+          </label>
+
+          <label class="formato-card">
+            <input type="checkbox" name="formato_respuesta" value="ordenar_pasos">
+            <div class="formato-card-inner">
+              <div class="formato-icon">↕</div>
+              <div class="formato-nombre">Ordenar pasos</div>
+              <div class="formato-desc">Pasos de un proceso en desorden. Ideal para algoritmos, flujos HTTP, eventos del DOM.</div>
+            </div>
+          </label>
+
+          <label class="formato-card">
+            <input type="checkbox" name="formato_respuesta" value="identificar_error">
+            <div class="formato-card-inner">
+              <div class="formato-icon">⚠</div>
+              <div class="formato-nombre">Identificar error</div>
+              <div class="formato-desc">Código, definición o argumento con un error deliberado. El usuario lo encuentra y explica por qué.</div>
+            </div>
+          </label>
+
+          <label class="formato-card">
+            <input type="checkbox" name="formato_respuesta" value="asociar_columnas">
+            <div class="formato-card-inner">
+              <div class="formato-icon">⇄</div>
+              <div class="formato-nombre">Asociar columnas</div>
+              <div class="formato-desc">Dos columnas de conceptos relacionados a emparejar. Ideal para conceptos y definiciones.</div>
+            </div>
+          </label>
+
+          <label class="formato-card">
+            <input type="checkbox" name="formato_respuesta" value="verdadero_falso_justificado">
+            <div class="formato-card-inner">
+              <div class="formato-icon">V/F</div>
+              <div class="formato-nombre">Verdadero / Falso justificado</div>
+              <div class="formato-desc">Una afirmación. El usuario dice V o F y debe justificar en una oración. Sin justificación no cuenta.</div>
+            </div>
+          </label>
+
+          <label class="formato-card">
+            <input type="checkbox" name="formato_respuesta" value="produccion_en_contexto">
+            <div class="formato-card-inner">
+              <div class="formato-icon">✍</div>
+              <div class="formato-nombre">Producción en contexto</div>
+              <div class="formato-desc">Escenario real donde el usuario produce algo: código, texto, fórmula, diagrama, argumentación.</div>
+            </div>
+          </label>
+
+        </div>
+        <input type="hidden" id="add-formato-respuesta">
+      </div>
+      <!-- fin formato panel -->
+
       <div class="input-row">
         <div class="input-group">
           <label class="input-label">Tags</label>
@@ -346,8 +455,6 @@
 </div>
 
 <div id="toast"></div>
-
-<!-- closeModal exposed globally from modals.js via main.js -->
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
