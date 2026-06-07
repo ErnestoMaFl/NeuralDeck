@@ -491,20 +491,3 @@ main:has(#sec-concepts.active) {
   align-items: center;
   gap: 6px;
 }
-
-/* Dashboard due list — items compactos */
-#due-list .concept-item {
-  padding: 8px 10px;
-  margin-bottom: 5px;
-}
-#due-list .concept-name {
-  font-size: 13px;
-}
-#due-list .concept-meta {
-  margin-top: 2px;
-  gap: 5px;
-}
-#due-list {
-  max-height: 240px;
-  overflow-y: auto;
-}
