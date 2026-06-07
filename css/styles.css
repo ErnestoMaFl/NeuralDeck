@@ -1,7 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    NeuralDeck — Stylesheet
    ═══════════════════════════════════════════════════════════════ */
-
 :root {
   --bg: #0a0a0f;
   --surface: #111118;
@@ -27,18 +26,14 @@
   --radius: 8px;
   --radius2: 12px;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow-x: hidden; }
-
 /* ── Scrollbar ─────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
 /* ── Layout ────────────────────────────────────────────────── */
 #app { display: flex; flex-direction: column; min-height: 100vh; }
-
 /* ── Nav ───────────────────────────────────────────────────── */
 nav {
   display: flex; align-items: center; justify-content: space-between;
@@ -57,14 +52,11 @@ nav {
 .nav-tab:hover  { color: var(--text); background: var(--surface2); }
 .nav-tab.active { color: var(--accent2); background: var(--accent-dim); }
 .nav-status { font-family: var(--mono); font-size: 11px; color: var(--text3); }
-
 /* ── Main ──────────────────────────────────────────────────── */
 main { flex: 1; padding: 28px 24px; max-width: 960px; width: 100%; margin: 0 auto; }
-
 /* ── Sections ──────────────────────────────────────────────── */
 .section        { display: none; }
 .section.active { display: block; }
-
 /* ── Cards ─────────────────────────────────────────────────── */
 .card {
   background: var(--surface); border: 1px solid var(--border);
@@ -74,17 +66,14 @@ main { flex: 1; padding: 28px 24px; max-width: 960px; width: 100%; margin: 0 aut
 .card:hover { border-color: var(--border2); }
 .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .card-title  { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; }
-
 /* ── Grids ─────────────────────────────────────────────────── */
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 @media (max-width: 600px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
-
 /* ── Stat box ──────────────────────────────────────────────── */
 .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius2); padding: 16px 20px; }
 .stat-value { font-family: var(--mono); font-size: 32px; font-weight: 600; color: var(--text); line-height: 1; }
 .stat-label { font-size: 12px; color: var(--text3); margin-top: 6px; }
-
 /* ── Buttons ───────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
@@ -104,7 +93,6 @@ main { flex: 1; padding: 28px 24px; max-width: 960px; width: 100%; margin: 0 aut
 .btn-sm   { padding: 5px 10px; font-size: 12px; }
 .btn-lg   { padding: 12px 24px; font-size: 14px; }
 .btn-full { width: 100%; justify-content: center; }
-
 /* ── Tags ──────────────────────────────────────────────────── */
 .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; font-family: var(--mono); }
 .tag-purple { background: var(--accent-dim); color: var(--accent2); border: 1px solid rgba(124,106,247,0.2); }
@@ -112,7 +100,6 @@ main { flex: 1; padding: 28px 24px; max-width: 960px; width: 100%; margin: 0 aut
 .tag-yellow { background: var(--yellow-dim); color: var(--yellow);  border: 1px solid rgba(250,204,21,0.2); }
 .tag-red    { background: var(--red-dim);    color: var(--red);     border: 1px solid rgba(248,113,113,0.2); }
 .tag-gray   { background: var(--surface2);   color: var(--text3);   border: 1px solid var(--border); }
-
 /* ── Inputs ────────────────────────────────────────────────── */
 .input-group  { margin-bottom: 14px; }
 .input-label  {
@@ -128,7 +115,6 @@ main { flex: 1; padding: 28px 24px; max-width: 960px; width: 100%; margin: 0 aut
 .textarea    { min-height: 80px; resize: vertical; }
 select.input { cursor: pointer; }
 .input-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
 /* ── Badges ────────────────────────────────────────────────── */
 .badge {
   display: inline-flex; align-items: center; justify-content: center;
@@ -137,7 +123,6 @@ select.input { cursor: pointer; }
 }
 .badge-accent { background: var(--accent); color: #fff; }
 .badge-green  { background: var(--green);  color: #000; }
-
 /* ── Concept list items ────────────────────────────────────── */
 .concept-item {
   display: flex; align-items: center; gap: 12px; padding: 12px 14px;
@@ -154,14 +139,12 @@ select.input { cursor: pointer; }
 .concept-domain  { font-size: 11px; color: var(--text3); font-family: var(--mono); }
 .concept-states  { display: flex; gap: 4px; align-items: center; }
 .concept-due     { font-family: var(--mono); font-size: 11px; color: var(--text3); white-space: nowrap; }
-
 /* ── State pills ───────────────────────────────────────────── */
 .state-pill         { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 600; font-family: var(--mono); }
 .state-nuevo        { background: var(--surface3); color: var(--text3); }
 .state-fallas       { background: var(--red-dim);    color: var(--red); }
 .state-en_progreso  { background: var(--yellow-dim); color: var(--yellow); }
 .state-dominado     { background: var(--green-dim);  color: var(--green); }
-
 /* ── Code block ────────────────────────────────────────────── */
 .code-block {
   background: var(--surface2); border: 1px solid var(--border);
@@ -169,7 +152,6 @@ select.input { cursor: pointer; }
   font-family: var(--mono); font-size: 12px; line-height: 1.6; color: var(--text2);
   overflow-x: auto; white-space: pre; max-height: 320px; overflow-y: auto;
 }
-
 /* ── Modal ─────────────────────────────────────────────────── */
 .modal-overlay {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
@@ -186,7 +168,6 @@ select.input { cursor: pointer; }
 .modal-title  { font-size: 16px; font-weight: 700; color: var(--text); }
 .modal-close  { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 20px; line-height: 1; padding: 4px; }
 .modal-close:hover { color: var(--text); }
-
 /* ── Toast ─────────────────────────────────────────────────── */
 #toast {
   position: fixed; bottom: 24px; right: 24px; z-index: 999;
@@ -196,24 +177,19 @@ select.input { cursor: pointer; }
   animation: fadeUp 0.2s ease; max-width: 320px;
 }
 @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
-
 /* ── Divider ───────────────────────────────────────────────── */
 .divider { height: 1px; background: var(--border); margin: 20px 0; }
-
 /* ── Section header ────────────────────────────────────────── */
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .section-title  { font-size: 20px; font-weight: 700; color: var(--text); }
 .section-sub    { font-size: 13px; color: var(--text3); margin-top: 3px; }
-
 /* ── Progress bar ──────────────────────────────────────────── */
 .progress-bar  { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; margin-top: 8px; }
 .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
-
 /* ── Step indicator ────────────────────────────────────────── */
 .steps { display: flex; gap: 6px; margin-bottom: 20px; }
 .step      { flex: 1; height: 3px; border-radius: 2px; background: var(--surface3); transition: background 0.3s; }
 .step.done { background: var(--accent); }
-
 /* ── Gist status ───────────────────────────────────────────── */
 .gist-status { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .dot        { width: 7px; height: 7px; border-radius: 50%; }
@@ -221,23 +197,19 @@ select.input { cursor: pointer; }
 .dot-red    { background: var(--red); }
 .dot-yellow { background: var(--yellow); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
-
 /* ── Empty state ───────────────────────────────────────────── */
 .empty       { text-align: center; padding: 48px 20px; color: var(--text3); }
 .empty-icon  { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
 .empty-title { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
 .empty-sub   { font-size: 13px; }
-
 /* ── Concept detail ────────────────────────────────────────── */
 .detail-grid          { display: grid; gap: 14px; }
 .detail-section       { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
 .detail-section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-
 /* ── Search ────────────────────────────────────────────────── */
 .search-wrap      { position: relative; margin-bottom: 16px; }
 .search-wrap .input { padding-left: 36px; }
 .search-icon      { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; }
-
 /* ── Filter bar ────────────────────────────────────────────── */
 .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 .filter-btn {
@@ -247,30 +219,24 @@ select.input { cursor: pointer; }
 }
 .filter-btn:hover,
 .filter-btn.active { background: var(--accent-dim); border-color: rgba(124,106,247,0.4); color: var(--accent2); }
-
 /* ── Inner tabs ────────────────────────────────────────────── */
 .inner-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: var(--surface2); padding: 3px; border-radius: var(--radius); width: fit-content; }
 .inner-tab  { padding: 6px 14px; border-radius: 5px; font-size: 13px; cursor: pointer; color: var(--text2); transition: all 0.15s; border: none; background: transparent; font-family: var(--sans); }
 .inner-tab.active { background: var(--surface); color: var(--text); font-weight: 600; }
-
 /* ── Token input ───────────────────────────────────────────── */
 .token-wrap          { position: relative; }
 .token-wrap .input   { padding-right: 80px; font-family: var(--mono); font-size: 12px; }
 .token-show          { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--text3); cursor: pointer; font-family: var(--sans); }
-
 /* ── Copy area ─────────────────────────────────────────────── */
 .copy-area         { position: relative; }
 .copy-btn-overlay  { position: absolute; top: 8px; right: 8px; }
-
 /* ── Highlight helpers ─────────────────────────────────────── */
 .hl-accent { color: var(--accent2); }
 .hl-green  { color: var(--green); }
 .hl-yellow { color: var(--yellow); }
 .hl-red    { color: var(--red); }
-
 /* ── Separator ─────────────────────────────────────────────── */
 .sep { margin: 0 6px; color: var(--text3); }
-
 /* ── Flex utilities ────────────────────────────────────────── */
 .flex            { display: flex; }
 .flex-col        { display: flex; flex-direction: column; }
@@ -292,7 +258,6 @@ select.input { cursor: pointer; }
 .text-muted { color: var(--text2); }
 .text-dim  { color: var(--text3); }
 .fw-600    { font-weight: 600; }
-
 /* ── Autocomplete dropdown ─────────────────────────────────── */
 .ac-wrap { position: relative; }
 .ac-dropdown {
@@ -310,7 +275,6 @@ select.input { cursor: pointer; }
 .ac-item:hover,
 .ac-item.selected  { background: var(--accent-dim); color: var(--text); }
 .ac-item-tag       { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: auto; }
-
 /* ── Tag chips ─────────────────────────────────────────────── */
 .tag-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; min-height: 0; }
 .tag-chip {
@@ -321,7 +285,6 @@ select.input { cursor: pointer; }
 }
 .tag-chip-remove       { cursor: pointer; opacity: 0.6; font-size: 13px; line-height: 1; }
 .tag-chip-remove:hover { opacity: 1; }
-
 /* ── Revision badge ────────────────────────────────────────── */
 .revision-badge {
   display: inline-flex; align-items: center; gap: 5px;
@@ -331,7 +294,6 @@ select.input { cursor: pointer; }
 .revision-off       { background: var(--surface2); color: var(--text3); border-color: var(--border); }
 .revision-off:hover { border-color: var(--yellow); color: var(--yellow); }
 .revision-on        { background: var(--yellow-dim); color: var(--yellow); border-color: rgba(250,204,21,0.4); box-shadow: 0 0 6px rgba(250,204,21,0.2); }
-
 /* ── Split banner ──────────────────────────────────────────── */
 .split-banner {
   background: rgba(124,106,247,0.1); border: 1px solid rgba(124,106,247,0.35);
@@ -340,7 +302,6 @@ select.input { cursor: pointer; }
 .split-banner-title   { font-size: 13px; font-weight: 700; color: var(--accent2); margin-bottom: 6px; }
 .split-banner-body    { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 12px; }
 .split-banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
 /* ── FSRS rating buttons ───────────────────────────────────── */
 .rating-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .rating-btn {
@@ -356,18 +317,15 @@ select.input { cursor: pointer; }
 .rating-4 { background: var(--green-dim);            border-color: rgba(74,222,128,0.3);  color: var(--green); }
 .rating-4:hover { background: rgba(74,222,128,0.25); }
 .rating-label { font-size: 10px; margin-top: 3px; opacity: 0.7; }
-
 /* ── LaTeX rendering ───────────────────────────────────────── */
 .latex-content { font-size: 13px; line-height: 1.7; color: var(--text2); word-break: break-word; }
 .latex-content .katex          { color: var(--accent2); }
 .latex-content .katex-display  { margin: 8px 0; }
-
 .latex-hint {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 10px; color: var(--text3); font-family: var(--mono); margin-top: 4px;
 }
 .latex-hint-icon { color: var(--accent2); font-style: italic; font-family: Georgia, serif; }
-
 .latex-preview-wrap  { margin-top: 6px; }
 .latex-preview-label {
   font-size: 10px; font-weight: 600; color: var(--text3); font-family: var(--mono);
@@ -382,7 +340,6 @@ select.input { cursor: pointer; }
 .latex-preview-box .katex         { color: var(--accent2); }
 .latex-preview-box .katex-display { margin: 6px 0; }
 .latex-preview-empty { color: var(--text3); font-size: 12px; font-style: italic; }
-
 /* ── Formato de respuesta grid ─────────────────────────────── */
 .formato-grid {
   display: grid;
@@ -458,4 +415,65 @@ select.input { cursor: pointer; }
   background: var(--yellow-dim);
   border-color: rgba(250,204,21,0.4);
   color: var(--yellow);
+}
+
+/* ── IMPROVEMENT: Concepts scroll fix ─────────────────────────── */
+.section-concepts.active {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+}
+.concepts-fixed-header {
+  flex-shrink: 0;
+}
+.concepts-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── IMPROVEMENT: Version badge ───────────────────────────────── */
+.version-badge {
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 600;
+  background: var(--accent-dim);
+  color: var(--accent2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(124,106,247,0.2);
+}
+
+/* ── IMPROVEMENT: Markdown styles ─────────────────────────────── */
+.md-content { line-height: 1.65; }
+.md-h1 { font-size: 1.4em; font-weight: 700; margin: 12px 0 6px; color: var(--text); }
+.md-h2 { font-size: 1.2em; font-weight: 600; margin: 10px 0 5px; color: var(--text); }
+.md-h3 { font-size: 1.05em; font-weight: 600; margin: 8px 0 4px; color: var(--text2); }
+.md-inline-code {
+  background: var(--accent-dim); color: var(--accent2);
+  padding: 1px 5px; border-radius: 3px;
+  font-family: var(--mono); font-size: 0.9em;
+}
+.md-code-block {
+  display: block; background: var(--surface3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px; margin: 8px 0;
+  font-family: var(--mono); font-size: 12px; line-height: 1.5;
+  overflow-x: auto; color: var(--text2); white-space: pre;
+}
+.md-blockquote {
+  border-left: 3px solid var(--accent); padding: 6px 12px; margin: 6px 0;
+  color: var(--text2); font-style: italic; background: rgba(124,106,247,0.04);
+  border-radius: 0 4px 4px 0;
+}
+.md-ul { padding-left: 20px; margin: 6px 0; }
+.md-li { padding: 2px 0; font-size: inherit; color: var(--text2); }
+.md-link { color: var(--accent2); text-decoration: none; border-bottom: 1px solid rgba(168,159,245,0.3); }
+.md-link:hover { border-color: var(--accent2); }
+
+/* ── IMPROVEMENT: Detail section title flex for badges ────────── */
+.detail-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }

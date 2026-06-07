@@ -10,28 +10,23 @@ import {
   _addTags, _addRequiere, addTagChip
 } from '../ui/autocomplete.js';
 import { conceptItem } from './dashboard.js';
-
 // ── Filter state ──────────────────────────────────────────────
 let _revisionFilterActive = false;
 let _activeTagFilters     = new Set();
 let _tagPanelOpen         = false;
-
 // ── List ──────────────────────────────────────────────────────
 export function renderConceptList() {
   const db            = getDB();
   const q             = (document.getElementById('search-input')?.value || '').toLowerCase();
   const activeDomains = [...document.querySelectorAll('.filter-btn.active[data-domain]')].map(b => b.dataset.domain);
-
   // ── Rebuild domain filter bar ──────────────────────────────
   const domains = [...new Set(db.conceptos.map(c => c.dominio))];
   document.getElementById('domain-filters').innerHTML = domains.map(d =>
     `<button class="filter-btn ${activeDomains.includes(d) ? 'active' : ''}" data-domain="${d}" onclick="toggleDomainFilter(this)">${d}</button>`
   ).join('');
-
   // ── Update revision filter button state ────────────────────
   const revBtn = document.getElementById('revision-filter-btn');
   if (revBtn) revBtn.classList.toggle('active', _revisionFilterActive);
-
   // ── Build tag filter panel ─────────────────────────────────
   const allTags = [...new Set(db.conceptos.flatMap(c => c.tags || []))].sort();
   const tagList = document.getElementById('tag-filter-list');
@@ -41,7 +36,7 @@ export function renderConceptList() {
       : allTags.map(t => `
         <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text2);padding:2px 0;">
           <input type="checkbox" ${_activeTagFilters.has(t) ? 'checked' : ''}
-            onchange="onTagFilterChange('${t.replace(/'/g,"\\'")}', this.checked)"
+            onchange="onTagFilterChange('${t.replace(/'/g,"\'")}', this.checked)"
             style="accent-color:var(--accent);">
           <span>${t}</span>
         </label>`).join('');
@@ -49,36 +44,28 @@ export function renderConceptList() {
   // Update tag filter button style
   const tagBtn = document.getElementById('tag-filter-btn');
   if (tagBtn) tagBtn.classList.toggle('active', _activeTagFilters.size > 0);
-
   // ── Apply filters ──────────────────────────────────────────
   let list = db.conceptos;
-
   if (q) list = list.filter(c =>
     c.nombre.toLowerCase().includes(q) ||
     c.dominio.toLowerCase().includes(q) ||
     (c.tags || []).some(t => t.toLowerCase().includes(q))
   );
-
   if (activeDomains.length) list = list.filter(c => activeDomains.includes(c.dominio));
-
   if (_revisionFilterActive) list = list.filter(c => c.revision === true);
-
   if (_activeTagFilters.size > 0) {
     list = list.filter(c => [..._activeTagFilters].every(t => (c.tags || []).includes(t)));
   }
-
   // ── Render ─────────────────────────────────────────────────
   const activeFiltersCount =
     (q ? 1 : 0) +
     activeDomains.length +
     (_revisionFilterActive ? 1 : 0) +
     _activeTagFilters.size;
-
   document.getElementById('concepts-count').textContent =
     activeFiltersCount > 0
       ? `${list.length} de ${db.conceptos.length} conceptos`
       : `${db.conceptos.length} conceptos`;
-
   const el = document.getElementById('concept-list');
   if (list.length === 0) {
     el.innerHTML = `<div class="empty">
@@ -92,17 +79,14 @@ export function renderConceptList() {
   // Render LaTeX in concept names
   processLatexInContainer(el);
 }
-
 export function toggleDomainFilter(btn) {
   btn.classList.toggle('active');
   renderConceptList();
 }
-
 export function toggleRevisionFilter() {
   _revisionFilterActive = !_revisionFilterActive;
   renderConceptList();
 }
-
 export function toggleTagFilterPanel() {
   _tagPanelOpen = !_tagPanelOpen;
   const panel = document.getElementById('tag-filter-panel');
@@ -114,7 +98,6 @@ export function toggleTagFilterPanel() {
     }, 0);
   }
 }
-
 function _closeTagPanel(e) {
   const panel = document.getElementById('tag-filter-panel');
   const btn   = document.getElementById('tag-filter-btn');
@@ -123,13 +106,11 @@ function _closeTagPanel(e) {
     panel.style.display = 'none';
   }
 }
-
 export function onTagFilterChange(tag, checked) {
   if (checked) _activeTagFilters.add(tag);
   else         _activeTagFilters.delete(tag);
   renderConceptList();
 }
-
 // ── Inner tabs of modal-add ───────────────────────────────────
 export function modalConceptTab(tab) {
   document.getElementById('modal-panel-def').style.display     = tab === 'def'     ? '' : 'none';
@@ -137,31 +118,26 @@ export function modalConceptTab(tab) {
   document.getElementById('modal-tab-def').classList.toggle('active',     tab === 'def');
   document.getElementById('modal-tab-formato').classList.toggle('active', tab === 'formato');
 }
-
 // ── Formato helpers ───────────────────────────────────────────
 function getSelectedFormatos() {
   return [...document.querySelectorAll('input[name="formato_respuesta"]:checked')]
     .map(cb => cb.value);
 }
-
 function setSelectedFormatos(formatos = []) {
   document.querySelectorAll('input[name="formato_respuesta"]').forEach(cb => {
     cb.checked = formatos.includes(cb.value);
   });
   syncHiddenFormato(formatos);
 }
-
 function syncHiddenFormato(formatos) {
   const el = document.getElementById('add-formato-respuesta');
   if (el) el.value = JSON.stringify(formatos);
 }
-
 // ── Detail modal ──────────────────────────────────────────────
 export function showConceptDetail(id) {
   const db = getDB();
   const c  = db.conceptos.find(x => x.id === id);
   if (!c) return;
-
   // Render name with LaTeX
   const nameEl = document.getElementById('modal-concept-title');
   nameEl.innerHTML = '';
@@ -171,14 +147,12 @@ export function showConceptDetail(id) {
   nameSpan.textContent = c.nombre;
   nameEl.appendChild(nameSpan);
   processLatexInContainer(nameEl);
-
   const errPending   = (c.errores_previos || []).filter(e => !e.corregido);
   const daysUntilDue = getDueIn(c);
   const definicionHtml = latexHtml(c.definicion_actual, 'latex-content', 'detail-definicion-' + c.id);
   const mejoras        = c.mejoras_acumuladas  || [];
   const ejercicios     = c.ultimos_ejercicios  || [];
   const formatos       = c.formato_respuesta   || [];
-
   document.getElementById('modal-concept-body').innerHTML = `
     <div class="detail-grid">
       <div class="detail-section">
@@ -219,10 +193,20 @@ export function showConceptDetail(id) {
         </div>
       </div>
       <div class="detail-section">
-        <div class="detail-section-title">Definición actual</div>
+        <div class="detail-section-title">Definición actual${(c.historial_definiciones || []).length > 1 ? ` <span class="version-badge" style="margin-left:6px;">v${c.historial_definiciones.length}</span>` : ''}</div>
         ${definicionHtml}
         ${(c.historial_definiciones || []).length > 1
-          ? `<div style="margin-top:8px;font-size:11px;color:var(--text3);">${c.historial_definiciones.length} versiones en historial</div>`
+          ? `<details style="margin-top:8px;">
+              <summary style="font-size:11px;color:var(--accent2);cursor:pointer;font-family:var(--mono);user-select:none;">
+                📜 Ver ${c.historial_definiciones.length} versiones del historial
+              </summary>
+              <div style="margin-top:6px;">
+                ${(c.historial_definiciones || []).slice().reverse().map(h => `<div style="padding:6px 0;border-bottom:1px solid var(--border);">
+                  <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;">${h.fecha}</div>
+                  <div style="font-size:12px;color:var(--text2);line-height:1.5;">${latexHtml(h.texto, 'latex-content')}</div>
+                </div>`).join('')}
+              </div>
+            </details>`
           : ''}
       </div>
       ${mejoras.length ? `<div class="detail-section">
@@ -265,7 +249,6 @@ export function showConceptDetail(id) {
   processLatexInContainer(document.getElementById('modal-concept-body'));
   openModal('modal-concept');
 }
-
 // ── Add modal ─────────────────────────────────────────────────
 export function showAddModal() {
   ['add-nombre', 'add-dominio', 'add-definicion'].forEach(id => {
@@ -286,7 +269,6 @@ export function showAddModal() {
   document.querySelector('#modal-add .btn-primary').onclick        = () => addConcept();
   openModal('modal-add');
 }
-
 export function showEditModal(id) {
   const db = getDB();
   const c  = db.conceptos.find(x => x.id === id);
@@ -304,7 +286,6 @@ export function showEditModal(id) {
   document.querySelector('#modal-add .btn-primary').onclick     = () => saveConcept(id);
   openModal('modal-add');
 }
-
 // ── Flush pending tag input before save ───────────────────────
 function flushPendingTagInput() {
   const inp = document.getElementById('add-tags-input');
@@ -313,7 +294,6 @@ function flushPendingTagInput() {
   if (val) { addTagChip(val); inp.value = ''; }
   document.getElementById('ac-tags').classList.remove('open');
 }
-
 // ── CRUD ──────────────────────────────────────────────────────
 export function addConcept() {
   flushPendingTagInput();
@@ -342,7 +322,6 @@ export function addConcept() {
   renderConceptList();
   toast('Concepto agregado ✓');
 }
-
 export function saveConcept(id) {
   flushPendingTagInput();
   const db = getDB();
@@ -369,7 +348,6 @@ export function saveConcept(id) {
   renderConceptList();
   toast('Concepto actualizado ✓');
 }
-
 export function deleteConcept(id) {
   if (!confirm('¿Eliminar este concepto? Esta acción no se puede deshacer.')) return;
   const db      = getDB();
@@ -378,7 +356,6 @@ export function deleteConcept(id) {
   renderConceptList();
   toast('Concepto eliminado');
 }
-
 // ── Template modal ────────────────────────────────────────────
 export function showTemplateModal() {
   const template = {
@@ -400,7 +377,6 @@ export function showTemplateModal() {
   document.getElementById('template-display').textContent = JSON.stringify(template, null, 2);
   openModal('modal-template');
 }
-
 export function copyTemplate() {
   const text = document.getElementById('template-display').textContent;
   navigator.clipboard.writeText(text)
@@ -412,7 +388,6 @@ export function copyTemplate() {
       toast('📋 Plantilla copiada');
     });
 }
-
 // ── Expose globals ────────────────────────────────────────────
 window.renderConceptList    = renderConceptList;
 window.toggleDomainFilter   = toggleDomainFilter;

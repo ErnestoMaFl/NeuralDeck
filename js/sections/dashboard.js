@@ -5,7 +5,7 @@ import { getDB, saveDB, today } from '../core/db.js';
 import { isDue, getDueIn } from '../core/fsrs.js';
 import { latexHtml } from '../core/latex.js';
 import { toast } from '../ui/modals.js';
-
+import { domainCardStyle, domainBadgeStyle } from '../core/domain-colors.js';
 export function renderDashboard() {
   const db  = getDB();
   const due = db.conceptos.filter(c => isDue(c));
@@ -18,7 +18,6 @@ export function renderDashboard() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('es-MX', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
-
   // Due list
   const dueList = document.getElementById('due-list');
   if (due.length === 0) {
@@ -30,7 +29,6 @@ export function renderDashboard() {
       processLatexInContainer(dueList);
     });
   }
-
   // State distribution
   const states     = ['nuevo', 'fallas', 'en_progreso', 'dominado'];
   const statLabels = { nuevo: 'Nuevo', fallas: 'Con fallas', en_progreso: 'En progreso', dominado: 'Dominado' };
@@ -47,7 +45,6 @@ export function renderDashboard() {
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${statColors[st]}"></div></div>
     </div>`;
   }).join('');
-
   // Upcoming
   const upcoming = db.conceptos
     .filter(c => !isDue(c))
@@ -71,7 +68,6 @@ export function renderDashboard() {
     });
   }
 }
-
 /**
  * Renders a single concept row. Name is rendered with LaTeX support.
  * Caller must call processLatexInContainer on the parent after inserting.
@@ -85,30 +81,34 @@ export function conceptItem(c) {
   const revBadge = c.revision
     ? `<span class="revision-badge revision-on"  onclick="event.stopPropagation();toggleRevision('${c.id}')">⚑ revisión</span>`
     : `<span class="revision-badge revision-off" onclick="event.stopPropagation();toggleRevision('${c.id}')">⚑</span>`;
-
   const formatoBadge = (c.formato_respuesta || []).length > 0
     ? `<span class="tag tag-gray" style="font-size:10px;" title="${(c.formato_respuesta).join(', ')}">⊞ ${c.formato_respuesta.length} formato${c.formato_respuesta.length > 1 ? 's' : ''}</span>`
     : '';
-
   // Name rendered with LaTeX — data-latex-pending so processLatexInContainer handles it
   const nameHtml = latexHtml(c.nombre, 'concept-name');
-
-  return `<div class="concept-item ${isDue(c) ? 'due' : ''}" onclick="showConceptDetail('${c.id}')">
+  // Version badge
+  const versionCount = (c.historial_definiciones || []).length;
+  const versionBadge = versionCount > 1
+    ? `<span class="version-badge" title="${versionCount} versiones">v${versionCount}</span>`
+    : '';
+  // Domain color
+  const cardStyle = domainCardStyle(c.dominio);
+  return `<div class="concept-item ${isDue(c) ? 'due' : ''}" style="${cardStyle}" onclick="showConceptDetail('${c.id}')">
     <div class="concept-info">
       ${nameHtml}
       <div class="concept-meta">
-        <span class="concept-domain">${c.dominio}</span>
+        <span style="${domainBadgeStyle(c.dominio)}">${c.dominio}</span>
         ${(c.tags || []).map(t => `<span class="tag tag-purple">${t}</span>`).join('')}
         <span class="state-pill state-${c.estado_teoria}">T:${c.estado_teoria}</span>
         <span class="state-pill state-${c.estado_practica}">P:${c.estado_practica}</span>
         ${formatoBadge}
+        ${versionBadge}
         ${revBadge}
       </div>
     </div>
     ${dueStr}
   </div>`;
 }
-
 export function toggleRevision(id) {
   const db = getDB();
   const c  = db.conceptos.find(x => x.id === id);
@@ -119,6 +119,5 @@ export function toggleRevision(id) {
   renderDashboard();
   toast(c.revision ? '⚑ Marcado para revisión con IA' : '⚑ Revisión desactivada');
 }
-
 // Expose globals
 window.toggleRevision = toggleRevision;

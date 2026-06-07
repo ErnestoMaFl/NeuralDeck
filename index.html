@@ -68,9 +68,9 @@
         </div>
       </div>
     </div>
-
     <!-- ═══════════════ CONCEPTS ═══════════════ -->
-    <div id="sec-concepts" class="section">
+    <div id="sec-concepts" class="section section-concepts">
+      <div class="concepts-fixed-header">
       <div class="section-header">
         <div>
           <div class="section-title">Conceptos</div>
@@ -85,7 +85,6 @@
         <span class="search-icon">⌕</span>
         <input class="input" id="search-input" placeholder="Buscar por nombre, dominio, tag..." oninput="renderConceptList()">
       </div>
-
       <!-- ── Filter bar: dominios + revisión activa ── -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
         <div class="filter-bar" id="domain-filters" style="margin-bottom:0;flex:1;min-width:0;"></div>
@@ -110,10 +109,9 @@
           </div>
         </div>
       </div>
-
-      <div id="concept-list"></div>
+      </div>
+      <div id="concept-list" class="concepts-scroll-area"></div>
     </div>
-
     <!-- ═══════════════ SESSION ═══════════════ -->
     <div id="sec-session" class="section">
       <div class="section-header">
@@ -130,6 +128,7 @@
             <span class="tag tag-purple" id="session-count-tag">0 conceptos</span>
           </div>
           <div id="session-concept-list" style="margin-bottom:14px;"></div>
+          <div id="session-filter-bar"></div>
           <div class="input-group">
             <label class="input-label">Nivel de energía (opcional — lo pregunta la IA)</label>
             <select class="input" id="energy-select">
@@ -165,7 +164,6 @@
         <div id="diff-result"></div>
       </div>
     </div>
-
     <!-- ═══════════════ CONFIG ═══════════════ -->
     <div id="sec-config" class="section">
       <div class="section-header">
@@ -176,7 +174,6 @@
         <button class="inner-tab"        onclick="configTab('data')">Datos</button>
         <button class="inner-tab"        onclick="configTab('prompt')">Prompt Tutor</button>
       </div>
-
       <!-- Gist -->
       <div id="config-gist">
         <div class="card mb-16">
@@ -216,7 +213,6 @@
           </div>
         </div>
       </div>
-
       <!-- Data -->
       <div id="config-data" style="display:none;">
         <div class="card mb-16">
@@ -240,7 +236,6 @@
           <button class="btn btn-danger" onclick="resetDB()">🗑 Reiniciar base de datos</button>
         </div>
       </div>
-
       <!-- Prompt -->
       <div id="config-prompt" style="display:none;">
         <div class="card">
@@ -255,7 +250,6 @@
     </div>
   </main>
 </div>
-
 <!-- MODAL: Concepto detalle -->
 <div class="modal-overlay" id="modal-concept">
   <div class="modal">
@@ -266,7 +260,6 @@
     <div id="modal-concept-body"></div>
   </div>
 </div>
-
 <!-- MODAL: Agregar / Editar concepto -->
 <div class="modal-overlay" id="modal-add">
   <div class="modal">
@@ -289,13 +282,11 @@
           </div>
         </div>
       </div>
-
       <!-- ── Inner tabs: Definición / Formato de respuesta ── -->
       <div class="inner-tabs" style="margin-bottom:14px;">
         <button class="inner-tab active" id="modal-tab-def"     onclick="modalConceptTab('def')">Definición</button>
         <button class="inner-tab"        id="modal-tab-formato" onclick="modalConceptTab('formato')">Formato de respuesta</button>
       </div>
-
       <!-- Panel: Definición -->
       <div id="modal-panel-def">
         <div class="input-group">
@@ -313,7 +304,6 @@
           </div>
         </div>
       </div>
-
       <!-- Panel: Formato de respuesta (oculto por defecto) -->
       <div id="modal-panel-formato" style="display:none;">
         <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.6;">
@@ -321,7 +311,6 @@
           en lugar de pedir una definición libre. Puedes elegir uno o varios.
         </div>
         <div class="formato-grid">
-
           <label class="formato-card">
             <input type="checkbox" name="formato_respuesta" value="opcion_multiple_visual">
             <div class="formato-card-inner">
@@ -330,7 +319,6 @@
               <div class="formato-desc">4 opciones que describen visualmente algo (gráfica, diagrama, forma, comportamiento). El usuario elige A/B/C/D.</div>
             </div>
           </label>
-
           <label class="formato-card">
             <input type="checkbox" name="formato_respuesta" value="completar_serie">
             <div class="formato-card-inner">
@@ -339,7 +327,6 @@
               <div class="formato-desc">Secuencia con un elemento faltante. Ideal para patrones, algoritmos paso a paso, progresiones.</div>
             </div>
           </label>
-
           <label class="formato-card">
             <input type="checkbox" name="formato_respuesta" value="ordenar_pasos">
             <div class="formato-card-inner">
@@ -348,7 +335,6 @@
               <div class="formato-desc">Pasos de un proceso en desorden. Ideal para algoritmos, flujos HTTP, eventos del DOM.</div>
             </div>
           </label>
-
           <label class="formato-card">
             <input type="checkbox" name="formato_respuesta" value="identificar_error">
             <div class="formato-card-inner">
@@ -357,7 +343,6 @@
               <div class="formato-desc">Código, definición o argumento con un error deliberado. El usuario lo encuentra y explica por qué.</div>
             </div>
           </label>
-
           <label class="formato-card">
             <input type="checkbox" name="formato_respuesta" value="asociar_columnas">
             <div class="formato-card-inner">
@@ -366,7 +351,6 @@
               <div class="formato-desc">Dos columnas de conceptos relacionados a emparejar. Ideal para conceptos y definiciones.</div>
             </div>
           </label>
-
           <label class="formato-card">
             <input type="checkbox" name="formato_respuesta" value="verdadero_falso_justificado">
             <div class="formato-card-inner">
@@ -375,7 +359,6 @@
               <div class="formato-desc">Una afirmación. El usuario dice V o F y debe justificar en una oración. Sin justificación no cuenta.</div>
             </div>
           </label>
-
           <label class="formato-card">
             <input type="checkbox" name="formato_respuesta" value="produccion_en_contexto">
             <div class="formato-card-inner">
@@ -384,12 +367,10 @@
               <div class="formato-desc">Escenario real donde el usuario produce algo: código, texto, fórmula, diagrama, argumentación.</div>
             </div>
           </label>
-
         </div>
         <input type="hidden" id="add-formato-respuesta">
       </div>
       <!-- fin formato panel -->
-
       <div class="input-row">
         <div class="input-group">
           <label class="input-label">Tags</label>
@@ -438,7 +419,6 @@
     </div>
   </div>
 </div>
-
 <!-- MODAL: Plantilla JSON -->
 <div class="modal-overlay" id="modal-template">
   <div class="modal" style="max-width:640px;">
@@ -453,7 +433,6 @@
     </div>
   </div>
 </div>
-
 <div id="toast"></div>
 <script type="module" src="js/main.js"></script>
 </body>

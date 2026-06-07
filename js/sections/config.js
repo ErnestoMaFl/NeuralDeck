@@ -1,13 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
 // SECTION — Config (Gist, Data, Tutor Prompt)
 // ═══════════════════════════════════════════════════════════════
-
 import { getDB, saveDB, today, getGistConfig, sanitizeDB, GIST_CONFIG_KEY } from '../core/db.js';
 import { toast } from '../ui/modals.js';
 import { renderDashboard } from './dashboard.js';
-
 // ── Render entry point ────────────────────────────────────────
-
 export function renderConfig() {
   const cfg = getGistConfig();
   const tokenEl = document.getElementById('gh-token');
@@ -17,9 +14,7 @@ export function renderConfig() {
   if (cfg.token || cfg.gistId) updateGistStatus('configured');
   updateAutosaveToggleBtn();
 }
-
 // ── Gist status indicator ─────────────────────────────────────
-
 export function updateGistStatus(state) {
   const dot = document.getElementById('gist-dot');
   const txt = document.getElementById('gist-status-text');
@@ -35,43 +30,34 @@ export function updateGistStatus(state) {
   txt.textContent       = s.text;
   txt.style.color       = s.color;
 }
-
 // ── Save config ───────────────────────────────────────────────
-
 export function saveGistConfig() {
   const token  = document.getElementById('gh-token').value.trim();
   const gistId = document.getElementById('gist-id').value.trim();
   if (!token && !gistId) { toast('Ingresa al menos el Gist ID o el token'); return; }
-
   const existing = getGistConfig();
   const merged   = { token: token || existing.token || '', gistId: gistId || existing.gistId || '' };
   localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(merged));
   if (merged.token || merged.gistId) updateGistStatus('configured');
   toast('Configuración guardada ✓');
 }
-
 // ── Gist sync ─────────────────────────────────────────────────
-
 export async function syncGist(direction) {
   const tokenInput = document.getElementById('gh-token')?.value.trim();
   const gistInput  = document.getElementById('gist-id')?.value.trim();
   const saved      = getGistConfig();
   const token      = tokenInput || saved.token  || '';
   const gistId     = gistInput  || saved.gistId || '';
-
   updateGistStatus('syncing');
-
   try {
     if (direction === 'push') {
       if (!token) { toast('Se necesita token para subir a Gist'); updateGistStatus(saved.token ? 'configured' : 'error'); return; }
-
       const db = getDB();
       if (db.conceptos.length === 0) {
         toast('⛔ Push bloqueado — BD local vacía. Descarga primero si tienes datos en Gist.');
         updateGistStatus(gistId ? 'configured' : 'error');
         return;
       }
-
       // Safety check: compare counts before overwriting
       if (gistId) {
         try {
@@ -91,7 +77,14 @@ export async function syncGist(direction) {
               const localCount  = db.conceptos.length;
               if (localCount < remoteCount) {
                 const ok = confirm(
-                  `⚠️ ADVERTENCIA\n\nGist remoto tiene ${remoteCount} conceptos.\nTu BD local tiene ${localCount} conceptos.\n\nSubir SOBREESCRIBIRÁ el Gist con menos datos.\n\n¿Estás seguro? Considera hacer Pull primero.`
+                  `⚠️ ADVERTENCIA
+
+Gist remoto tiene ${remoteCount} conceptos.
+Tu BD local tiene ${localCount} conceptos.
+
+Subir SOBREESCRIBIRÁ el Gist con menos datos.
+
+¿Estás seguro? Considera hacer Pull primero.`
                 );
                 if (!ok) { updateGistStatus('configured'); return; }
               }
@@ -99,10 +92,8 @@ export async function syncGist(direction) {
           }
         } catch (_) { /* proceed if check fails */ }
       }
-
       const content = JSON.stringify(db, null, 2);
       let res, newGistId = gistId;
-
       if (gistId) {
         res = await fetch(`https://api.github.com/gists/${gistId}`, {
           method:  'PATCH',
@@ -122,37 +113,36 @@ export async function syncGist(direction) {
         const el   = document.getElementById('gist-id');
         if (el) el.value = newGistId;
       }
-
       localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify({ token, gistId: newGistId }));
       updateGistStatus('configured');
       toast('⬆ BD subida a Gist ✓' + (newGistId !== gistId ? ' · Gist ID guardado' : ''));
-
     } else {
       // pull
       if (!gistId) { toast('Ingresa el Gist ID en Config → Gist primero'); updateGistStatus(token ? 'configured' : 'error'); return; }
-
       const localDB = getDB();
       if (localDB.conceptos.length > 0) {
         const ok = confirm(
-          `⚠️ ADVERTENCIA\n\nTu BD local tiene ${localDB.conceptos.length} conceptos.\n\nDescargar de Gist REEMPLAZARÁ tu BD local.\n\n¿Continuar?`
+          `⚠️ ADVERTENCIA
+
+Tu BD local tiene ${localDB.conceptos.length} conceptos.
+
+Descargar de Gist REEMPLAZARÁ tu BD local.
+
+¿Continuar?`
         );
         if (!ok) { updateGistStatus(token ? 'configured' : 'error'); return; }
       }
-
       const headers = token ? { Authorization: `token ${token}` } : {};
       const res     = await fetch(`https://api.github.com/gists/${gistId}`, { headers });
       if (!res.ok) throw new Error(`Error al descargar: ${res.status} ${res.statusText}`);
-
       const data = await res.json();
       const file = data.files['neuraldeck_db.json'];
       if (!file) throw new Error('Archivo "neuraldeck_db.json" no encontrado en el Gist');
-
       let rawContent = file.content;
       if (file.truncated) {
         const raw = await fetch(file.raw_url, { headers });
         rawContent = await raw.text();
       }
-
       const db = sanitizeDB(JSON.parse(rawContent));
       saveDB(db);
       localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify({ token, gistId }));
@@ -165,18 +155,14 @@ export async function syncGist(direction) {
     toast('Error: ' + e.message);
   }
 }
-
 export function toggleToken() {
   const inp = document.getElementById('gh-token');
   inp.type  = inp.type === 'password' ? 'text' : 'password';
 }
-
 // ── Data tab ──────────────────────────────────────────────────
-
 export function renderRawJSON() {
   document.getElementById('raw-json-view').textContent = JSON.stringify(getDB(), null, 2);
 }
-
 export function copyRawJSON() {
   const text = document.getElementById('raw-json-view').textContent;
   navigator.clipboard.writeText(text)
@@ -188,7 +174,6 @@ export function copyRawJSON() {
       toast('📋 JSON copiado');
     });
 }
-
 export function exportJSON() {
   const db   = getDB();
   const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
@@ -200,7 +185,6 @@ export function exportJSON() {
   URL.revokeObjectURL(url);
   toast('BD exportada ✓');
 }
-
 export function importJSON(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -209,15 +193,12 @@ export function importJSON(e) {
     try {
       let db = JSON.parse(ev.target.result);
       if (!db.conceptos) throw new Error('Formato inválido — falta campo "conceptos"');
-
       const beforeIds = db.conceptos.map(c => c.id ? String(c.id).trim() : '');
       db = sanitizeDB(db);
       const fixedIds  = db.conceptos.filter((_, i) => !beforeIds[i] || beforeIds[i] === 'AUTOGENERADO_POR_APP').length;
-
       if (!confirm(`Importar ${db.conceptos.length} conceptos? Esto reemplazará la BD actual.`)) return;
       saveDB(db);
       renderDashboard();
-
       let msg = `✓ ${db.conceptos.length} conceptos importados`;
       if (fixedIds) msg += ` · ${fixedIds} IDs auto-asignados`;
       toast(msg);
@@ -225,7 +206,6 @@ export function importJSON(e) {
   };
   reader.readAsText(file);
 }
-
 export function resetDB() {
   if (!confirm('¿Reiniciar la base de datos? PERDERÁS TODOS TUS CONCEPTOS.')) return;
   if (!confirm('¿Estás completamente seguro? No hay vuelta atrás.')) return;
@@ -233,13 +213,10 @@ export function resetDB() {
   renderDashboard();
   toast('BD reiniciada');
 }
-
 // ── Tutor prompt tab ──────────────────────────────────────────
-
 export function renderTutorPrompt() {
   document.getElementById('tutor-prompt-display').textContent = getTutorPrompt();
 }
-
 export function copyTutorPrompt() {
   const text = getTutorPrompt();
   navigator.clipboard.writeText(text)
@@ -251,7 +228,6 @@ export function copyTutorPrompt() {
       toast('📋 Prompt copiado');
     });
 }
-
 export function getTutorPrompt() {
   return `# ROLE: Tutor Experto en Aprendizaje Activo y Sobrecarga Progresiva
 Eres un sistema avanzado de tutoría diseñado para gestionar y expandir mi conocimiento mediante repetición espaciada y recuerdo activo. Actúas como un "entrenador de gimnasio mental": aumentas la dificultad de forma incremental, detectas patrones de error y adaptas cada sesión a mi estado cognitivo real. El sistema es completamente agnóstico al dominio — matemáticas, inglés, programación, electrónica, ciencias, historia, o cualquier otra disciplina funcionan igual.
@@ -349,7 +325,6 @@ EJEMPLO COMPLETAMENTE DOCUMENTADO:
     {
       "id": "001",
       // OBLIGATORIO. Usar el ID exacto del JSON de sesión. Nunca inventar.
-
       "calificacion_fsrs": 3,
       // OBLIGATORIO SIEMPRE. Escala:
       //   1 = Olvido total — no recordó nada, requiere reaprendizaje
@@ -358,27 +333,22 @@ EJEMPLO COMPLETAMENTE DOCUMENTADO:
       //   4 = Fácil — recordó sin esfuerzo, respuesta fluida
       // La app recalcula internamente stability, difficulty, due con este número.
       // La IA NUNCA modifica esos parámetros. Solo manda este número entero.
-
       "estado_teoria": "dominado",
       // OPCIONAL. Solo incluir si cambió durante esta sesión.
       // Valores válidos EXACTAMENTE: "nuevo" | "fallas" | "en_progreso" | "dominado"
       // Si no cambió, OMITIR este campo completamente.
-
       "estado_practica": "en_progreso",
       // OPCIONAL. Misma regla que estado_teoria.
       // Si no cambió, OMITIR este campo completamente.
-
       "definicion_refinada": Ej. "Patrón donde una clase declara sus dependencias como parámetros en lugar de instanciarlas, permitiendo que un agente externo las provea. Esto reduce acoplamiento y hace el código testeable.",
       // OPCIONAL. Solo si la definición mejoró significativamente durante la sesión.
       // Si no mejoró, OMITIR este campo completamente (no mandar null).
       // La app: mueve definicion_actual al historial con fecha de hoy, reemplaza con este valor.
-
       "nueva_mejora": Ej. "Puede implementarse mediante constructor, setter o interfaz — 2026-05-04",
       // OPCIONAL. Solo si aplicó +0.5-1kg y hay algo concreto que agregar.
       // Formato: "descripción de la mejora — YYYY-MM-DD"
       // La app hace append a mejoras_acumuladas. Nunca reemplaza el historial.
       // Si no aplica, OMITIR este campo completamente.
-
       "nuevo_ejercicio": {
         "descripcion": Ej. "Tienes un sistema de pagos con PaypalService instanciado dentro de OrderService. Diseña la refactorización completa usando DI por constructor e identifica qué cambiaría en los tests.",
         "formato": "diseñar",
@@ -389,7 +359,6 @@ EJEMPLO COMPLETAMENTE DOCUMENTADO:
       // Máximo 4 ejercicios se mantienen en el historial.
       // dificultad debe ser entero o .5, entre 1 y 5.
       // Si no se hizo ejercicio, OMITIR este campo.
-
       "nuevo_error": null,
       // Si hubo error nuevo en esta sesión, reemplazar null por:
       // {
@@ -399,22 +368,18 @@ EJEMPLO COMPLETAMENTE DOCUMENTADO:
       // }
       // La app genera id_error automáticamente y hace append a errores_previos con corregido: false.
       // Si no hubo error, mandar null explícitamente (este campo SÍ se manda aunque sea null).
-
       "error_corregido_id": null,
       // Si un error previo (de errores_pendientes del JSON de sesión) quedó resuelto esta sesión,
       // mandar aquí el id_error exacto (ej: "e001").
       // La app actualiza corregido: true en ese error.
       // Si no hubo corrección, mandar null explícitamente.
-
       "revision_resuelta": true,
       // OPCIONAL. Solo si el concepto tenía revision:true y quedó clarificado en sesión.
       // La app desactiva el flag automáticamente. OMITIR si no aplica o no estaba en revisión.
-
       "split_recomendado": false,
       // OPCIONAL. true si el concepto creció tanto que conviene dividirlo en dos tarjetas.
       // Solo actívalo si hay evidencia clara: el concepto abarca dos ideas distintas y autónomas.
       // Si es true, incluir también:
-
       "split_razon": null
       // OPCIONAL. String explicando por qué recomiendas dividir. Incluir solo si split_recomendado: true.
       // La app mostrará un banner al usuario con esta explicación y le preguntará si crear la tarjeta hija.
@@ -486,10 +451,8 @@ Cuando uses un formato estandarizado, indícalo así en el reto práctico:
 9. Nunca ajustes el ritmo de la sesión sin preguntar primero, y solo si los tres indicadores de cansancio ocurren simultáneamente con 95% de certeza.
 10. Si un concepto tiene revision: true, SIEMPRE profundiza — nunca silencio activo en ese concepto.`;
 }
-
 // ── Autosave toggle button ────────────────────────────────────
 // Imported by autosave.js; exposed here for renderConfig to call
-
 export function updateAutosaveToggleBtn() {
   const btn = document.getElementById('autosave-toggle-btn');
   if (!btn) return;
@@ -500,7 +463,6 @@ export function updateAutosaveToggleBtn() {
     btn.className   = enabled ? 'btn btn-danger btn-sm' : 'btn btn-green btn-sm';
   });
 }
-
 // ── Expose globals ────────────────────────────────────────────
 window.renderConfig      = renderConfig;
 window.saveGistConfig    = saveGistConfig;

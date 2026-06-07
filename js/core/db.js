@@ -7,11 +7,9 @@ export const DEFAULT_DB = {
   meta: { version: '1.0', ultima_actualizacion: today(), total_sesiones: 0 },
   conceptos: []
 };
-
 export function today() {
   return new Date().toISOString().slice(0, 10);
 }
-
 export function sanitizeDB(db) {
   if (!db || !Array.isArray(db.conceptos)) return db;
   const usedIds = new Set(
@@ -56,7 +54,6 @@ export function sanitizeDB(db) {
   });
   return db;
 }
-
 export function getDB() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -66,12 +63,10 @@ export function getDB() {
     return JSON.parse(JSON.stringify(DEFAULT_DB));
   }
 }
-
 export function saveDB(db) {
   db.meta.ultima_actualizacion = today();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
 }
-
 export function getGistConfig() {
   try { return JSON.parse(localStorage.getItem(GIST_CONFIG_KEY)) || {}; }
   catch { return {}; }

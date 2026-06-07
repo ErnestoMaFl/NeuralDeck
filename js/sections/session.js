@@ -5,13 +5,49 @@ import { getDB, saveDB, today } from '../core/db.js';
 import { isDue, applyFSRSRating } from '../core/fsrs.js';
 import { toast, openModal } from '../ui/modals.js';
 import { _addTags, _addRequiere, renderTagChips, renderRequiereChips } from '../ui/autocomplete.js';
+import { getDomainColor } from '../core/domain-colors.js';
 
+// ── Session filter state ──────────────────────────────────────
+let _sessionDomainFilter = null;
+let _sessionTagFilters   = new Set();
+let _sessionTagPanelOpen = false;
 // ── Prepare ───────────────────────────────────────────────────
 export function renderSession() {
   const db  = getDB();
-  const due = db.conceptos.filter(c => isDue(c));
-  document.getElementById('session-count-tag').textContent = due.length + ' conceptos';
+  const allDue = db.conceptos.filter(c => isDue(c));
+  // Apply filters
+  let due = allDue;
+  if (_sessionDomainFilter) due = due.filter(c => c.dominio === _sessionDomainFilter);
+  if (_sessionTagFilters.size > 0) due = due.filter(c => [..._sessionTagFilters].every(t => (c.tags || []).includes(t)));
+  const hasFilters = _sessionDomainFilter || _sessionTagFilters.size > 0;
+  document.getElementById('session-count-tag').textContent = hasFilters
+    ? `${due.length} de ${allDue.length} conceptos`
+    : allDue.length + ' conceptos';
+  // Build filter bar
+  const domains = [...new Set(allDue.map(c => c.dominio))].sort();
+  const allTags = [...new Set(allDue.flatMap(c => c.tags || []))].sort();
+  let filterHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">';
+  filterHtml += '<span style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;">Filtrar:</span>';
+  filterHtml += `<button class="filter-btn ${!_sessionDomainFilter ? 'active' : ''}" onclick="toggleSessionDomainFilter(null)">Todos</button>`;
+  domains.forEach(d => {
+    const color = getDomainColor(d);
+    const isActive = _sessionDomainFilter === d;
+    const style = isActive ? `background:${color.bg};border-color:${color.border};color:${color.text};` : '';
+    filterHtml += `<button class="filter-btn ${isActive ? 'active' : ''}" style="${style}" onclick="toggleSessionDomainFilter('${d.replace(/'/g, "\\'")}')">${d}</button>`;
+  });
+  if (allTags.length > 0) {
+    filterHtml += `<div style="position:relative;display:inline-block;">`;
+    filterHtml += `<button class="filter-btn ${_sessionTagFilters.size > 0 ? 'active' : ''}" id="session-tag-filter-btn" onclick="toggleSessionTagPanel()"># Tags${_sessionTagFilters.size > 0 ? ' (' + _sessionTagFilters.size + ')' : ''} ▾</button>`;
+    filterHtml += `<div id="session-tag-filter-panel" style="display:${_sessionTagPanelOpen ? 'block' : 'none'};position:absolute;top:calc(100% + 4px);right:0;z-index:200;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 12px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">`;
+    filterHtml += allTags.map(t => `<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--text2);padding:2px 0;"><input type="checkbox" ${_sessionTagFilters.has(t) ? 'checked' : ''} onchange="onSessionTagFilterChange('${t.replace(/'/g,"\\'")}', this.checked)" style="accent-color:var(--accent);"><span>${t}</span></label>`).join('');
+    filterHtml += `</div></div>`;
+  }
+  if (hasFilters) filterHtml += `<button class="btn btn-ghost btn-sm" onclick="clearSessionFilters()" style="font-size:11px;">✕ Limpiar</button>`;
+  filterHtml += '</div>';
+  // Insert filter bar before concept list
   const listEl = document.getElementById('session-concept-list');
+  const filterContainer = document.getElementById('session-filter-bar');
+  if (filterContainer) filterContainer.innerHTML = filterHtml;
   if (due.length === 0) {
     listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">Sin conceptos pendientes hoy. ¡Vuelve mañana!</div>';
   } else {
@@ -31,17 +67,17 @@ export function renderSession() {
   }
   generateSessionPackage();
 }
-
 export function generateSessionPackage() {
   const db     = getDB();
-  const due    = db.conceptos.filter(c => isDue(c));
+  let due      = db.conceptos.filter(c => isDue(c));
+  // Apply session filters
+  if (_sessionDomainFilter) due = due.filter(c => c.dominio === _sessionDomainFilter);
+  if (_sessionTagFilters.size > 0) due = due.filter(c => [..._sessionTagFilters].every(t => (c.tags || []).includes(t)));
   const energy = document.getElementById('energy-select')?.value || '';
-
   const indice_global = db.conceptos.map(c => ({
     id: c.id, nombre: c.nombre, dominio: c.dominio,
     tags: c.tags, estado_teoria: c.estado_teoria, estado_practica: c.estado_practica
   }));
-
   const conceptos_hoy = due.map(c => ({
     id:               c.id,
     nombre:           c.nombre,
@@ -64,14 +100,12 @@ export function generateSessionPackage() {
         concepto_relacionado_id:   e.concepto_relacionado || null
       }))
   }));
-
   const pkg = {
     indice_global,
     sesion: { energia: energy || null, fecha: today(), conceptos_hoy }
   };
   document.getElementById('session-package-preview').textContent = JSON.stringify(pkg, null, 2);
 }
-
 export function copySessionPackage() {
   const text = document.getElementById('session-package-preview').textContent;
   if (!text || text === '—') { toast('Primero genera el paquete'); return; }
@@ -84,7 +118,6 @@ export function copySessionPackage() {
       toast('📋 Paquete copiado');
     });
 }
-
 // ── Apply diff ────────────────────────────────────────────────
 export function applyDiff() {
   const raw = document.getElementById('diff-input').value.trim();
@@ -95,7 +128,6 @@ export function applyDiff() {
   if (!diff.actualizaciones || !Array.isArray(diff.actualizaciones)) {
     toast('El JSON no tiene el campo "actualizaciones"'); return;
   }
-
   const splits = diff.actualizaciones.filter(u => u.split_recomendado === true);
   if (splits.length > 0) {
     const db = getDB();
@@ -125,7 +157,6 @@ export function applyDiff() {
   }
   executeDiff(diff);
 }
-
 export function executeDiff(diff) {
   if (!diff) diff = window._pendingDiff;
   if (!diff) { toast('No hay diff pendiente'); return; }
@@ -194,7 +225,6 @@ export function executeDiff(diff) {
   toast('✓ Diff aplicado — ' + results.filter(r => r.status === 'ok').length + ' conceptos actualizados');
   document.getElementById('diff-input').value = '';
 }
-
 /**
  * Opens the add-concept modal pre-filled with parent's domain, tags and requiere.
  * If the IA provided split_definicion_sugerida, pre-fills the definition field too.
@@ -203,13 +233,10 @@ export function createSplitCard(parentId, sugeridaDefinicion = '') {
   const db     = getDB();
   const parent = db.conceptos.find(x => x.id === parentId);
   if (!parent) return;
-
   import('./concepts.js').then(m => {
     m.showAddModal();
-
     // Pre-fill domain
     document.getElementById('add-dominio').value = parent.dominio;
-
     // Pre-fill definition if the IA suggested one
     if (sugeridaDefinicion) {
       const defEl = document.getElementById('add-definicion');
@@ -221,7 +248,6 @@ export function createSplitCard(parentId, sugeridaDefinicion = '') {
         });
       }
     }
-
     // Pre-fill tags and requiere chips
     _addTags.length     = 0;
     _addRequiere.length = 0;
@@ -229,13 +255,33 @@ export function createSplitCard(parentId, sugeridaDefinicion = '') {
     _addRequiere.push({ id: parentId, nombre: parent.nombre });
     renderTagChips();
     renderRequiereChips();
-
     document.querySelector('#modal-add .modal-title').textContent = `Nueva tarjeta hija de: ${parent.nombre}`;
     const hint = sugeridaDefinicion
       ? 'Definición sugerida por la IA pre-cargada — revísala antes de guardar'
       : 'Completa el nombre y definición de la nueva tarjeta';
     toast(hint);
   });
+}
+// ── Session filter handlers ───────────────────────────────────
+export function toggleSessionDomainFilter(domain) {
+  _sessionDomainFilter = domain;
+  renderSession();
+}
+export function toggleSessionTagPanel() {
+  _sessionTagPanelOpen = !_sessionTagPanelOpen;
+  const panel = document.getElementById('session-tag-filter-panel');
+  if (panel) panel.style.display = _sessionTagPanelOpen ? 'block' : 'none';
+}
+export function onSessionTagFilterChange(tag, checked) {
+  if (checked) _sessionTagFilters.add(tag);
+  else         _sessionTagFilters.delete(tag);
+  renderSession();
+}
+export function clearSessionFilters() {
+  _sessionDomainFilter = null;
+  _sessionTagFilters.clear();
+  _sessionTagPanelOpen = false;
+  renderSession();
 }
 
 // ── Expose globals ────────────────────────────────────────────
@@ -245,3 +291,7 @@ window.copySessionPackage     = copySessionPackage;
 window.applyDiff              = applyDiff;
 window.executeDiff            = executeDiff;
 window.createSplitCard        = createSplitCard;
+window.toggleSessionDomainFilter   = toggleSessionDomainFilter;
+window.toggleSessionTagPanel       = toggleSessionTagPanel;
+window.onSessionTagFilterChange    = onSessionTagFilterChange;
+window.clearSessionFilters         = clearSessionFilters;
