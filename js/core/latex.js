@@ -53,6 +53,9 @@ export function markdownToHtml(text) {
   // Line breaks
   safe = safe.replace(/\n\n/g, '<br><br>');
   safe = safe.replace(/\n/g, '<br>');
+  // Limpiar <br> antes/después de elementos de bloque para evitar doble espaciado
+  safe = safe.replace(/(<br>)+(<\/?(?:div|ul|li|pre|blockquote)[^>]*>)/gi, '$2');
+  safe = safe.replace(/(<\/?(?:div|ul|li|pre|blockquote)[^>]*>)(<br>)+/gi, '$1');
   // Restore LaTeX
   placeholders.forEach((original, idx) => {
     safe = safe.replace(`%%LATEX_${idx}%%`, original);

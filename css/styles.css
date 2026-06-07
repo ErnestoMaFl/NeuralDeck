@@ -112,7 +112,7 @@ main { flex: 1; padding: 28px 24px; max-width: 960px; width: 100%; margin: 0 aut
   transition: border-color 0.15s; outline: none;
 }
 .input:focus { border-color: var(--accent); }
-.textarea    { min-height: 80px; resize: vertical; }
+.textarea    { min-height: 200px; resize: vertical; }
 select.input { cursor: pointer; }
 .input-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 /* ── Badges ────────────────────────────────────────────────── */
@@ -418,19 +418,33 @@ select.input { cursor: pointer; }
 }
 
 /* ── IMPROVEMENT: Concepts scroll fix ─────────────────────────── */
-.section-concepts.active {
+#sec-concepts.active {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 56px);
   overflow: hidden;
 }
-.concepts-fixed-header {
+#sec-concepts .concepts-fixed-header {
   flex-shrink: 0;
 }
-.concepts-scroll-area {
+#sec-concepts .concepts-scroll-area {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Cuando concepts está activo, main no debe tener overflow ni padding-bottom extra */
+main:has(#sec-concepts.active) {
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  max-width: 100%;
+}
+#sec-concepts.active {
+  padding: 0 24px;
+}
+#sec-concepts .concepts-fixed-header {
+  padding-top: 28px;
 }
 
 /* ── IMPROVEMENT: Version badge ───────────────────────────────── */
@@ -476,4 +490,21 @@ select.input { cursor: pointer; }
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Dashboard due list — items compactos */
+#due-list .concept-item {
+  padding: 8px 10px;
+  margin-bottom: 5px;
+}
+#due-list .concept-name {
+  font-size: 13px;
+}
+#due-list .concept-meta {
+  margin-top: 2px;
+  gap: 5px;
+}
+#due-list {
+  max-height: 240px;
+  overflow-y: auto;
 }

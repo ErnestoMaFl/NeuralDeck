@@ -23,7 +23,7 @@ export function renderDashboard() {
   if (due.length === 0) {
     dueList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">🎉 Sin conceptos pendientes hoy</div>';
   } else {
-    dueList.innerHTML = due.slice(0, 6).map(c => conceptItem(c, true)).join('');
+    dueList.innerHTML = due.slice(0, 4).map(c => conceptItem(c, true)).join('');
     // Render LaTeX in names
     import('../core/latex.js').then(({ processLatexInContainer }) => {
       processLatexInContainer(dueList);
