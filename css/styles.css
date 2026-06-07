@@ -112,7 +112,7 @@ main { flex: 1; padding: 28px 24px; max-width: 960px; width: 100%; margin: 0 aut
   transition: border-color 0.15s; outline: none;
 }
 .input:focus { border-color: var(--accent); }
-.textarea    { min-height: 200px; resize: vertical; }
+.textarea    { min-height: 160px; resize: vertical; }
 select.input { cursor: pointer; }
 .input-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 /* ── Badges ────────────────────────────────────────────────── */
@@ -418,10 +418,15 @@ select.input { cursor: pointer; }
 }
 
 /* ── IMPROVEMENT: Concepts scroll fix ─────────────────────────── */
+body:has(#sec-concepts.active) {
+  overflow: hidden;
+}
+
 #sec-concepts.active {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 56px);
+  /* 56px nav + 28px padding-top + 28px padding-bottom de main */
+  height: calc(100vh - 112px);
   overflow: hidden;
 }
 #sec-concepts .concepts-fixed-header {
@@ -431,20 +436,6 @@ select.input { cursor: pointer; }
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-}
-
-/* Cuando concepts está activo, main no debe tener overflow ni padding-bottom extra */
-main:has(#sec-concepts.active) {
-  padding-top: 0;
-  padding-bottom: 0;
-  overflow: hidden;
-  max-width: 100%;
-}
-#sec-concepts.active {
-  padding: 0 24px;
-}
-#sec-concepts .concepts-fixed-header {
-  padding-top: 28px;
 }
 
 /* ── IMPROVEMENT: Version badge ───────────────────────────────── */
